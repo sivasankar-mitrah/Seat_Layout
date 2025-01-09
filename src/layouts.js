@@ -1,28 +1,31 @@
 export const layouts = {
     layout1: [
-        { i: 'M1', x: 0, y: 0, w: 3, h: 2.5,unchange:true },
-        { i: 'M2', x: 23, y: 0, w: 3, h: 2.5,unchange:true },
-        { i: 'M3', x: 23, y: 6, w: 3, h: 2.5,unchange:true },
-        { i: 'SR', x: 3, y: 0, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'A1', x: 0, y: 2, w: 3, h: 3.5,unchange:true },
+        { i: 'M1', x: 0, y: 0, w: 3, h: 2.5, unchange: true },
+        { i: 'M2', x: 23, y: 0, w: 3, h: 2.5, unchange: true },
+        { i: 'M3', x: 23, y: 6, w: 3, h: 2.5, unchange: true },
+        { i: 'SR', x: 3, y: 0, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'A1', x: 0, y: 2, w: 3, h: 3.5, unchange: true },
 
-        { i: 'G1', x: 10, y: 13, w: 1, h: 11, emptyArea: true, gate: true,unchange:true },
-        { i: 'G2', x: 0, y: 17, w: 0.5, h: 2, emptyArea: true,unchange:true },
+        { i: 'G1', x: 10, y: 13, w: 1, h: 11, emptyArea: true, gate: true, unchange: true },
+        { i: 'G3', x: 11, y: 13, w: 15, h: 18, emptyArea: true, gate: true, unchange: true },
+
+        { i: 'G2', x: 0, y: 17, w: 0.5, h: 2, emptyArea: true, unchange: true },
         // { i: 'B', x: 11, y: 13, w: 15, h: 9, emptyArea: true, building: true },
-        { i: 'HR-G', x: 23, y: 3, w: 3, h: 4, emptyArea: true,unchange:true },
+        { i: 'HR-G', x: 23, y: 3, w: 3, h: 4, emptyArea: true, unchange: true },
 
-        { i: 'E1', x: 3, y: 1, w: 1, h: 5, emptyArea: true,unchange:true },
-        { i: 'E2', x: 4, y: 1, w: 12, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E3', x: 17, y: 1, w: 6, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E4', x: 4, y: 4, w: 12, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E5', x: 16, y: 1, w: 1, h: 6, emptyArea: true,unchange:true },
-        { i: 'E6', x: 17, y: 4, w: 6, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E7', x: 4, y: 7, w: 19, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E8', x: 0.5, y: 10, w: 3.5, h: 20, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E9 Sofa', x: 4, y: 9, w: 6, h: 12, emptyArea: true ,unchange:true},
-        { i: 'E10', x: 9, y: 15, w: 1, h: 7, emptyArea: true,unchange:true },
-        { i: 'E11', x: 4, y: 17, w: 5, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
-        { i: 'E12', x: 4, y: 19, w: 5, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange:true },
+        { i: 'E1', x: 3, y: 1, w: 1, h: 5, emptyArea: true, unchange: true },
+        { i: 'E2', x: 4, y: 1, w: 12, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E3', x: 17, y: 1, w: 6, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E4', x: 4, y: 4, w: 12, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E5', x: 16, y: 1, w: 1, h: 6, emptyArea: true, unchange: true },
+        { i: 'E6', x: 17, y: 4, w: 6, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E7', x: 4, y: 7, w: 19, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E8', x: 0.5, y: 10, w: 3.5, h: 20, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E9 Sofa', x: 4, y: 9, w: 6, h: 12, emptyArea: true, unchange: true },
+
+        { i: 'E10', x: 9, y: 15, w: 1, h: 7, emptyArea: true, unchange: true },
+        { i: 'E11', x: 4, y: 17, w: 5, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
+        { i: 'E12', x: 4, y: 19, w: 5, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
 
 
         { i: 's1', x: 4, y: 0, w: 1, h: 1, cls: '', unOccupied: true },
@@ -133,7 +136,7 @@ export const layouts = {
         { i: 's100', x: 19, y: 8, w: 1, h: 1, cls: '', unOccupied: false },
         { i: 's101', x: 20, y: 8, w: 1, h: 1, cls: '', unOccupied: false },
         { i: 's102', x: 21, y: 8, w: 1, h: 1, cls: '', unOccupied: false },
-        { i: 'SR-2', x: 22, y: 8, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true },
+        { i: 'SR-2', x: 22, y: 8, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true, unchange: true },
 
 
 

@@ -56,3 +56,13 @@
   border-left: solid 2px black;
   /* background-color: gainsboro; */
 }
+
+.profile {
+  display: flex;
+  gap: 10px;
+}
+
+.displayDetails {
+  display: flex;
+  flex-direction: column;
+}

@@ -1,13 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import GridLayout from 'react-grid-layout';
+import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag } from 'antd';
+import { layouts } from './layouts';
+import DrawerFn from './SideSection';
+import { devList } from './devList';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { layouts } from './layouts';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Button, Form, Layout, Select, Input, Radio, Space, Modal } from 'antd';
-import DrawerFn from './SideSection';
-import { } from 'antd';
-import { devList } from './devList';
+
+const { Option, OptGroup } = Select;
+
+const groupedOptions = [
+  {
+    label: 'UnOcuupied',
+    options: [
+      { value: 'apple', label: 'Apple' },
+      { value: 'banana', label: 'Banana' },
+      { value: 'orange', label: 'Orange' }
+    ]
+  },
+  {
+    label: 'Occupied',
+    options: [
+      { value: 'carrot', label: 'Carrot' },
+      { value: 'broccoli', label: 'Broccoli' },
+      { value: 'spinach', label: 'Spinach' }
+    ]
+  },
+];
+
 const App = () => {
   const { Header, Content, } = Layout;
   const [open, setOpen] = useState(false);
@@ -16,13 +37,18 @@ const App = () => {
   const [enableUnOccupiedViews, setEnableUnOccupiedViews] = useState([])
   const [radioValue, setRadioValue] = useState('single');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmit, setIsSubmit] = useState(false);
+  const [displayStack, setDisplayStack] = useState();
+  const [isVisible, setIsVisible] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+
   const [form] = Form.useForm();
+
   const handleOk = () => {
     setIsModalOpen(false);
   };
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+console.log('enableUnOccupiedViews',enableUnOccupiedViews)
   useEffect(() => {
     let combinedArr = layouts.layout1.map(item1 => {
       let item2 = devList.find(item => item.i === item1.i);
@@ -37,76 +63,38 @@ const App = () => {
 
     })
     setCurrentLayout(data)
-
+    setSelectedPerson([]);
   }, [])
 
-  // const handleOpenSideSection = (val) => {
-  //   console.log('valasdfasdas', val)
-  //   let tempData = [...selecetedPerson]
-  //   console.log('masdinasdiansd', selecetedPerson, tempData)
-  //   if (tempData.some(obj => obj.devId === val.devId)) {
-  //     console.log('testtttttttif')
-  //     tempData = tempData.filter(seat => seat.devId !== val.devId);
-  //   } else {
-  //     console.log('elseeeeeeeee')
-  //     if (radioValue === "single") {
-  //       tempData = [{ ...val }]
-  //       form.setFieldsValue({
-  //         newEmployee: `${val.devName} - ${val.i}`,
-  //       });
-  //       setOpen(true);
+  useEffect(() => {
+    const value = selecetedPerson?.[0]
+    if (radioValue === 'single' && value) {
+      let combinedArr = layouts.layout1.map(item1 => {
+        let item2 = devList.find(item => item.i === item1.i);
+        return { ...item1, ...item2 };
+      });
+      let data = combinedArr.map((item) => {
+        if (item?.i === value?.i) {
+          return { ...item, cls: `${item.cls} selected-place` }
+        }
+        else if ((item?.unOccupied && (item.role === "developer"))) {
+          return { ...item, cls: `${item.cls} available-seats` }
+        } else {
+          return { ...item }
+        }
+      })
+      setSelectedPerson([value])
+      setCurrentLayout(data)
+    }
+  }, [radioValue])
 
-  //     } else {
-  //       tempData = [...selecetedPerson, val]
-  //     }
-  //   }
-  //   let sample = currentLayout.map(item => {
-  //     console.log('itemitemitem', item)
-  //     let match = tempData.find(dataItem => dataItem.devId === item.devId);
-  //     if (match) {
-  //       item.cls = "selected-place"
-  //     } else if (item?.devName && !item?.emptyArea || item?.unchange) {
-  //       item.cls = "dev-area"
-  //     } else if (item?.emptyArea) {
-  //       item.cls = "walk-area"
-  //     } else {
-
-  //       item.cls = "available-seats"
-  //     }
-
-  //     return item;
-  //   });
-  //   console.log('afterLoopimg', tempData)
-  //   setCurrentLayout(sample)
-  //   setSelectedPerson(tempData)
-
-
-  // }
-
-  const { Option, OptGroup } = Select;
-
-  const groupedOptions = [
-    {
-      label: 'UnOcuupied',
-      options: [
-        { value: 'apple', label: 'Apple' },
-        { value: 'banana', label: 'Banana' },
-        { value: 'orange', label: 'Orange' }
-      ]
-    },
-    {
-      label: 'Occupied',
-      options: [
-        { value: 'carrot', label: 'Carrot' },
-        { value: 'broccoli', label: 'Broccoli' },
-        { value: 'spinach', label: 'Spinach' }
-      ]
-    },
-   
-  ];
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
 
   const handleOpenSideSection = (val) => {
     let tempData = [...selecetedPerson];
+
     const isPersonSelected = tempData.some(person => person.devId === val.devId);
     if (isPersonSelected) {
       tempData = tempData.filter(person => person.devId !== val.devId);
@@ -116,25 +104,56 @@ const App = () => {
         form.setFieldsValue({
           newEmployee: `${val.devName} - ${val.i}`,
         });
-        // setOpen(true);
+        setOpen(true);
       } else {
         tempData.push(val);
       }
     }
     const updatedLayout = currentLayout.map(item => {
       const match = tempData.find(dataItem => dataItem.devId === item.devId);
+
       const clsMapping = [
-        { condition: match, cls: 'selected-place' },
-        { condition: item?.devName && !item?.emptyArea || item?.unchange, cls: 'dev-area' },
-        { condition: item?.emptyArea, cls: 'walk-area' },
-        { condition: true, cls: 'available-seats' }
+        { condition: match, cls: 'selected-place' }
       ];
-      item.cls = clsMapping.find(mapping => mapping.condition)?.cls;
+
+      if (radioValue === "single") {
+        if (match?.i) {
+          item.cls = clsMapping.find(mapping => mapping.condition)?.cls;
+        } else {
+          if (item?.unOccupied && (item.role === "developer")) {
+            return { ...item, cls: " available-seats" }
+          } else if (item.cls === 'selected-place') {
+            return { ...item, cls: "" }
+          }
+        }
+      } else if (radioValue === "multiple") {
+        if (val?.cls === "selected-place" && (val?.i === item.i)) {
+          if (item?.unOccupied && (item.role === "developer")) {
+            return { ...item, cls: " available-seats" }
+          } else if (item.cls === 'selected-place') {
+            return { ...item, cls: "" }
+          }
+        } else {
+          if (match?.i) {
+            item.cls = clsMapping.find(mapping => mapping.condition)?.cls;
+          }
+        }
+      }
       return item;
     });
+
+    const show = devList.filter((data) => {
+      if (data.i === (val.i)) {
+        return data.stack
+      }
+    })
+
+    setDisplayStack(show)
+
     setCurrentLayout(updatedLayout);
     setSelectedPerson(tempData);
   };
+
   const handleSelectStack = (value) => {
     const stackClasses = {
       php: 'php-bg',
@@ -153,56 +172,42 @@ const App = () => {
     });
     setCurrentLayout(updatedLayout);
   };
-  console.log('selectedPersonasdasd', selecetedPerson)
-  console.log('dfjbdkasfjdkf', currentLayout)
-  // const handleSelectStack = (value) => {
-  //   let selecedStack = ""
-  //   switch (value) {
-  //     case 'php':
-  //       selecedStack = 'php-bg'
-  //       break;
-  //     case 'backend':
-  //       selecedStack = 'cf-bg'
-  //       break;
-  //     case 'frontend':
-  //       selecedStack = 'react-bg'
-  //       break;
-  //     default:
-  //       selecedStack = ""
-  //   }
-  //   console.log('valuevaluevalue', value)
-  //   console.log('selecedStackselecedStack', selecedStack)
-  //   let data = currentLayout.map((item, index) => {
-  //     if (item?.devName && item.stack === value && !item.emptyArea) {
-  //       return { ...item, cls: `${item.cls} ${selecedStack} ` }
-  //     } else if (!item?.devName && !item.emptyArea) {
-  //       return { ...item, cls: 'available-seats ' }
-  //     } else {
-  //       return { ...item, cls: '' }
-  //     }
 
-  //   })
-  //   setCurrentLayout(data)
-  //   console.log(`selected ${value}`);
-  // };
+  const handleDeleteModalOk = () => {
+    setIsDeleteModalOpen(false)
+    setIsSubmit(true)
+  }
+
+  const handleDeleteModalCancel = () => {
+    setIsDeleteModalOpen(false)
+  }
+
   const HandleComplete = () => {
     setIsModalOpen(true);
-    // setOpen(false)
-    // let data = currentLayout.map((item, index) => {
-    //   return { ...item, cls: '' }
+  }
 
-    // })
-    // setCurrentLayout(data)
-  }
   const handleRemoveMultiple = () => {
-    console.log('testtttt', selecetedPerson)
-    console.log('currenrererer', currentLayout)
   }
+
   const onChange = (e) => {
-    console.log('radio checked', e.target.value);
     setRadioValue(e.target.value);
   };
-  console.log('setCurrentLayoutsetCurrentLayout', currentLayout)
+
+  const handleTagChange = (tag, checked) => {
+    const nextSelectedTags = checked
+      ? [...selectedTags, tag]
+      : selectedTags.filter((t) => t !== tag);
+    setSelectedTags(nextSelectedTags);
+  }
+
+  const onVisibleClose = () => {
+    setIsVisible(false)
+  }
+  const handleUnoccupiedPeople = () => {
+    setOpen(true)
+    setIsVisible(true)
+  }
+
   return (
     <Layout>
       <Header
@@ -237,6 +242,10 @@ const App = () => {
               value: 'php',
               label: 'Php',
             },
+            {
+              value: 'all',
+              label: 'All',
+            },
           ]}
         />
         <Radio.Group onChange={onChange} value={radioValue}>
@@ -247,7 +256,7 @@ const App = () => {
         </Radio.Group>
         {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary" onClick={HandleComplete}>Selected </Button>}
         <Button type="primary" onClick={HandleComplete}>Complete </Button>
-        <Button type="primary" >UnOccupied Peoples </Button>
+        <Button type="primary" onClick={handleUnoccupiedPeople} >UnOccupied Peoples </Button>
 
       </Header>
       <Content
@@ -290,19 +299,49 @@ const App = () => {
           currentLayout={currentLayout}
           selecetedPerson={selecetedPerson}
           form={form}
+          show={displayStack}
           setEnableUnOccupiedViews={setEnableUnOccupiedViews}
           enableUnOccupiedViews={enableUnOccupiedViews}
-        /></div > : null
-        }
+          setIsDeleteModalOpen={setIsDeleteModalOpen}
+          isSubmit={isSubmit}
+          setIsSubmit={setIsSubmit}
+          isVisible={isVisible}
+        /></div > : null}
+        {/* <Drawer title="UnOccupied Peoples" onClose={onVisibleClose} open={isVisible}>
+          <Flex gap={4} wrap align="center">
+            {currentLayout.filter(dev => dev.unOccupied && dev.devName).map((tag) => (
+              <Tag.CheckableTag
+                className={tag.stack === 'frontend' ? 'react-bg' : tag.stack === 'php' ? 'php-bg' : tag.stack === 'backend' ? 'cf-bg' : ""}
+                key={tag}
+                checked={selectedTags.includes(tag)}
+                onChange={(checked) => handleTagChange(tag, checked)}
+              >
+                {tag.devName}
+              </Tag.CheckableTag>
+            ))}
+          </Flex>
+        </Drawer> */}
       </Content>
-      <Modal footer={null} title="RemoveMultiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+      <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+
         <div>
           Are you sue you want to remove the Multiple developers to unoccupied Positons
         </div>
+        <div className='my-2'>
+            {currentLayout.filter(dev => dev.cls==="selected-place" && dev.devName).map((tag) => (
+              <Tag
+                key={tag}
+                checked={selectedTags.includes(tag)}
+                onChange={(checked) => handleTagChange(tag, checked)}
+              >
+                {tag.devName}
+              </Tag>
+            ))}
+          </div>  
         <Button onClick={() => { handleRemoveMultiple() }}>
-          Remove Multiple
+          Remove
         </Button>
-        <Select defaultValue="apple" style={{ width: 200 }}>
+        {/* <Select defaultValue="apple" style={{ width: 200 }}>
           {groupedOptions.map(group => (
             <OptGroup key={group.label} label={group.label}>
               {group.options.map(option => (
@@ -312,7 +351,23 @@ const App = () => {
               ))}
             </OptGroup>
           ))}
-        </Select>
+        </Select> */}
+        
+        {/* <Flex gap={4} wrap align="center"> */}
+        
+          {/* </Flex> */}
+      </Modal>
+      <Modal
+        title="Change User"
+        open={isDeleteModalOpen}
+        onOk={handleDeleteModalOk}
+        onCancel={handleDeleteModalCancel}
+        okText="Yes"
+        okType="primary"
+      >
+        <div>
+          Are you sue you want to Change
+        </div>
       </Modal>
     </Layout >
   );

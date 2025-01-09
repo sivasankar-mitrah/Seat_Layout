@@ -1,56 +1,101 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Form, Input, } from 'antd';
-import { Select } from 'antd';
-import { devList } from './devList';
-import { Radio } from 'antd';
-export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurrentLayout, setOpen, setEnableUnOccupiedViews, enableUnOccupiedViews }) {
-    const [unOccupiedPeople, setUnOccupiedPeople] = useState([])
+import React, { useEffect, useState } from 'react'
+import { Button, Flex, Form, Select, Tag } from 'antd';
+import Profile from './profileCard';
+import UnOccupiedProfileCard from './unOccupiedProfileCard';
+// import { devList } from './devList';
+
+// const groupedOptions = [
+//     {
+//         label: 'UnOcuupied',
+//         options: [
+//             { value: 'apple', label: 'Apple' },
+//             { value: 'banana', label: 'Banana' },
+//             { value: 'orange', label: 'Orange' }
+//         ]
+//     },
+//     {
+//         label: 'Occupied',
+//         options: [
+//             { value: 'carrot', label: 'Carrot' },
+//             { value: 'broccoli', label: 'Broccoli' },
+//             { value: 'spinach', label: 'Spinach' }
+//         ]
+//     },
+// ];
+
+export default function DrawerFn
+    ({
+        form,
+        isSubmit,
+        setIsSubmit,
+        setIsDeleteModalOpen,
+        selecetedPerson,
+        currentLayout,
+        setCurrentLayout,
+        setOpen,
+        setEnableUnOccupiedViews,
+        enableUnOccupiedViews,
+        show,
+        isVisible
+    }) {
+
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
-    const [selectedUnOccupiedValue, setSelectedUnOccupiedValue] = useState(null);
-    const [selectedSeatmethod, setSelectedSeatMethod] = useState('avail');
+    const [placeForOccupiedPeople, setPlaceForOccupiedPeople] = useState([])
+    const [isChangeButtonVisible, setIsButtonVisible] = useState(true);
+    const [selectedCurrentEmployee, setSelectedCurrentEmployee] = useState({})
+    const [isSwapButtonVisible, setIsSwapButtonVisible] = useState(false);
+    const [selectedTag, setSelectedTag] = useState(null);
+    // const [unOccupiedPeople, setUnOccupiedPeople] = useState([])
+    // const [selectedUnOccupiedValue, setSelectedUnOccupiedValue] = useState(null);
+    // const [selectedSeatmethod, setSelectedSeatMethod] = useState('avail');
 
-    console.log('selectedUnOccupiedValueselectedUnOccupiedValue', currentLayout);
+    const values = form.getFieldValue();
 
-    const onChange = (e) => {
-        console.log('radio checked', e.target.value);
-        setSelectedSeatMethod(e.target.value);
-        let constructedData = []
-        if (e.target.value === "avail") {
-            constructedData = currentLayout.filter((item) => item.unOccupied).map((val, dev) => {
-                return { ...val, label: ` ${val.i}`, value: `${val.i}` }
-            })
-            console.log('asdasdasdas', constructedData)
-            console.log('asdasdasdas', constructedData)
-
-        } else {
-            constructedData = getAllPlaces()
-
+    useEffect(() => {
+        if (isSubmit) {
+            form.submit()
+            // onFinish()
+            setIsSubmit(false)
         }
-        console.log('constructedData', constructedData)
-        setPlaceForUnOccupiedPeople(constructedData)
-    };
-    const handleChange = (value) => {
-        setSelectedUnOccupiedValue(value); // Update the state with the selected value
-        console.log('Selectedvalue', value); // Log the selected value
-    };
-    const groupedOptions = [
-        {
-            label: 'UnOcuupied',
-            options: [
-                { value: 'apple', label: 'Apple' },
-                { value: 'banana', label: 'Banana' },
-                { value: 'orange', label: 'Orange' }
-            ]
-        },
-        {
-            label: 'Occupied',
-            options: [
-                { value: 'carrot', label: 'Carrot' },
-                { value: 'broccoli', label: 'Broccoli' },
-                { value: 'spinach', label: 'Spinach' }
-            ]
-        },
-    ];
+    }, [isSubmit])
+
+    useEffect(() => {
+        let tempData = currentLayout.filter((item) => item.unOccupied && item.i !== selecetedPerson?.[0]?.i).map((val) => {
+            return { ...val, label: ` ${val.i}`, value: `${val.i}` }
+        })
+        let occupiedData = currentLayout.filter((item) => !item.unOccupied && !item.unchange && item.i !== selecetedPerson?.[0]?.i).map((val) => {
+
+            return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
+        })
+
+        setPlaceForUnOccupiedPeople(tempData)
+        setPlaceForOccupiedPeople(occupiedData);
+        // let data2 = getAllPlaces();
+        // setUnOccupiedPeople(data2)
+    }, [selecetedPerson])
+
+    useEffect(() => {
+        if (selecetedPerson[0]?.i) {
+            if (selectedCurrentEmployee?.i) {
+                if (!(selectedCurrentEmployee?.unOccupied === true) && !(selecetedPerson[0]?.unOccupied === true)) {
+                    setIsSwapButtonVisible(true)
+                } else {
+                    setIsSwapButtonVisible(false)
+                }
+            } else {
+                setIsSwapButtonVisible(false)
+            }
+        } else {
+            setIsSwapButtonVisible(false)
+        }
+    }, [selecetedPerson])
+
+    // const getAllPlaces = () => {
+    //     return currentLayout.filter((item) => !item?.unchange)?.map((val, dev) => {
+    //         return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
+    //     })
+    // }
+
     const onFinish = (values) => {
         let tempData = currentLayout
         let exitingEmployeePositionIdx = values.newEmployee.split(' - ')[1]
@@ -59,9 +104,10 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
 
         let { devName, role, stack, devId } = tempData[newEmployeePosition];
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
+        let newEmployeeDevID = tempData[newEmployeePosition].devId
         if (newEmployeePosition !== -1) {
             tempData[newEmployeePosition] = {
-                ...selecetedPerson,
+                ...selecetedPerson[0],
                 i: values?.currentEmployee,
                 x: tempData[newEmployeePosition].x,
                 y: tempData[newEmployeePosition].y,
@@ -76,36 +122,75 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                 y: tempData[exitingEmployeePosition].y,
                 h: tempData[exitingEmployeePosition].h,
                 w: tempData[exitingEmployeePosition].w,
-                devName: "",
+                devName: tempData[exitingEmployeePosition].devName,
+                stack: tempData[exitingEmployeePosition].stack,
                 role: "developer",
-                cls: "available-seats"
+                cls: "available-seats",
+                unOccupied: true,
+                devId: newEmployeeDevID
             };
         }
         setCurrentLayout(tempData)
-        console.log('unoccupiedMemberDataunoccupiedMemberData', unoccupiedMemberData)
         setEnableUnOccupiedViews([unoccupiedMemberData])
         // setOpen(false)
     };
-    console.log('enableUnOccupiedViews', enableUnOccupiedViews)
 
-    const getAllPlaces = () => {
-        return currentLayout.filter((item) => !item?.unchange)?.map((val, dev) => {
-            return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
-        })
-    }
-    useEffect(() => {
-        console.log('55555555555555555', devList?.length);
-        let data2 = getAllPlaces()
-        let tempData = currentLayout.filter((item) => item.unOccupied).map((val, dev) => {
-            return { ...val, label: ` ${val.i}`, value: `${val.i}` }
-        })
-        setPlaceForUnOccupiedPeople(tempData)
-        setUnOccupiedPeople(data2)
-    }, [])
     const handlePlaceChange = () => {
-
+        setIsDeleteModalOpen(true)
     }
-    console.log('++++++ selecetedPersonselecetedPerson', selecetedPerson)
+
+    // const handleSelectChange = (val) => {
+    //     setIsButtonVisible(false)
+    // }
+
+    const handleSwapChange = () => {
+        if (selecetedPerson[0]?.i && selectedCurrentEmployee?.i) {
+            let tempData = currentLayout
+            const selectedIndex = tempData.findIndex(emp => emp.i === selecetedPerson[0]?.i);
+            const selectedCurrentIndex = tempData.findIndex(emp => emp.i === selectedCurrentEmployee?.i);
+
+            if (selectedIndex !== -1) {
+                tempData[selectedIndex] = {
+                    ...selecetedPerson[0],
+                    // i: selectedCurrentEmployee.i,
+                    devName: selectedCurrentEmployee.devName,
+                    role: selectedCurrentEmployee.role,
+                    stack: selectedCurrentEmployee.stack,
+                    devId: selectedCurrentEmployee.devId
+                };
+            }
+            if (selectedCurrentIndex !== -1) {
+                tempData[selectedCurrentIndex] = {
+                    ...selectedCurrentEmployee,
+                    // i: selecetedPerson[0].i,
+                    devName: selecetedPerson[0].devName,
+                    role: selecetedPerson[0].role,
+                    stack: selecetedPerson[0].stack,
+                    devId: selecetedPerson[0].devId
+                };
+            }
+            setCurrentLayout([...tempData]);
+        }
+    }
+
+    const handleOccupuiedChange = (val) => {
+        let changedSelection = currentLayout?.filter((item) => item?.i === val)[0]
+        setSelectedCurrentEmployee(changedSelection)
+        setIsButtonVisible(false)
+        if (!(changedSelection?.unOccupied === true) && !(selecetedPerson[0]?.unOccupied === true)) {
+            setIsSwapButtonVisible(true)
+        } else {
+            setIsSwapButtonVisible(false)
+        }
+    }
+
+    const handleTagChange = (tag, checked) => {
+        const nextSelectedTag = checked ? tag : null
+        setSelectedTag(nextSelectedTag);
+    };
+
+
+
     return (
         <div>
             <Form
@@ -113,9 +198,10 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                 name="basic"
                 onFinish={onFinish}
                 autoComplete="off"
+                style={{ position: "fixed" }}
             >
-                {!enableUnOccupiedViews?.length ? <><Form.Item
-                    label="New Employee"
+                {!enableUnOccupiedViews?.length && !isVisible ? <><Form.Item
+                    label="Employee Selected"
                     name="newEmployee"
                     labelCol={{
                         span: 24,
@@ -124,7 +210,8 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                         span: 24,
                     }}
                 >
-                    <Input disabled />
+                    {/* <Input disabled /> */}
+                    <Profile values={values} show={show} />
                 </Form.Item>
                     <Form.Item
                         label="Current Employee"
@@ -141,10 +228,33 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                             className='ms-2'
                             showSearch
                             placeholder="Select New Employee"
-                            options={unOccupiedPeople}
+                            options={[
+                                {
+                                    label: <span>UnOccupied</span>,
+                                    title: 'un-occupied',
+                                    options: placeForunOccupiedPeople,
+                                },
+                                {
+                                    label: <span>Occupied</span>,
+                                    title: 'ocupied',
+                                    options: placeForOccupiedPeople,
+                                },
+                            ]}
+                            onChange={handleOccupuiedChange}
                         />
-                    </Form.Item> </> : <>
-                    <Form.Item
+                    </Form.Item>
+                    <Form.Item className='d-flex justify-content-center mt-4'>
+                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
+                            Change
+                        </Button>
+                        {isSwapButtonVisible &&
+                            <Button onClick={handleSwapChange} type="primary">
+                                Swap
+                            </Button>
+                        }
+                    </Form.Item>
+                </> : <>
+                    {/* <Form.Item
                         label="UnOccupied Persons"
                         name="unoccupiedPersons"
                         labelCol={{
@@ -161,8 +271,8 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                             options={enableUnOccupiedViews}
                             onChange={handleChange}
                         />
-                    </Form.Item>
-                    {selectedUnOccupiedValue?.length ? <> <Form.Item> <Radio.Group onChange={onChange} value={selectedSeatmethod}>
+                    </Form.Item> */}
+                    {/* {selectedUnOccupiedValue?.length ? <> <Form.Item> <Radio.Group onChange={onChange} value={selectedSeatmethod}>
                         <Radio value={'avail'}>Select Available Places</Radio>
                         <Radio value={'exist'}>Select ExistingPlace</Radio>
                     </Radio.Group></Form.Item>   <Form.Item
@@ -182,16 +292,71 @@ export default function DrawerFn({ form, selecetedPerson, currentLayout, setCurr
                                 placeholder="Select New Employee"
                                 options={placeForunOccupiedPeople}
                             />
-                        </Form.Item></> : null}
-
-
+                        </Form.Item></> : null} */}
                 </>}
-
-                <Form.Item className='d-flex justify-content-center mt-4'>
-                    <Button onClick={handlePlaceChange} type="primary" htmlType="submit">
-                        Change
-                    </Button>
-                </Form.Item>
+                {isVisible && <>
+                    <Form.Item
+                        label="Unoccupied Peoples"
+                        name="unOccupiedPeoples  "
+                        labelCol={{
+                            span: 24,
+                        }}
+                        wrapperCol={{
+                            span: 24,
+                        }}
+                    >
+                        <Flex gap={4} wrap align="center">
+                            {currentLayout.filter(dev => dev.unOccupied && dev.devName).map((tag) => (
+                                <Tag.CheckableTag
+                                    className={
+                                        tag.stack === 'frontend' ? 'react-bg' :
+                                            tag.stack === 'php' ? 'php-bg' :
+                                                tag.stack === 'backend' ? 'cf-bg' : ""
+                                    }
+                                    key={tag}
+                                    checked={selectedTag === tag}
+                                    onChange={(checked) => handleTagChange(tag, checked)}
+                                >
+                                    {tag.devName}
+                                </Tag.CheckableTag>
+                            ))}
+                        </Flex>
+                    </Form.Item>
+                </>}
+                {console.log(`SideSection.jsx 315 selectedTag---->`, selectedTag?.length)}
+                {selectedTag ? <>
+                    <UnOccupiedProfileCard values={selectedTag} />
+                    <Form.Item
+                        label="Current Employee"
+                        name="currentEmployee"
+                        labelCol={{
+                            span: 24,
+                        }}
+                        wrapperCol={{
+                            span: 24,
+                        }}
+                        rules={[{ required: true, message: 'Please input your name!' }]}
+                    >
+                        <Select
+                            className='ms-2'
+                            showSearch
+                            placeholder="Select New Employee"
+                            options={[
+                                {
+                                    label: <span>UnOccupied</span>,
+                                    title: 'un-occupied',
+                                    options: placeForunOccupiedPeople,
+                                }
+                            ]}
+                            onChange={handleOccupuiedChange}
+                        />
+                    </Form.Item>
+                    <Form.Item className='d-flex justify-content-center mt-4'>
+                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
+                            Change
+                        </Button>
+                    </Form.Item>
+                </> : null}
             </Form>
         </div>
     )

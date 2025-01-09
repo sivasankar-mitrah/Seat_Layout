@@ -23,7 +23,7 @@ export const devList = [
     { i: 'E11', },
     { i: 'E12' },
 
-    { "devName": "", "i": "s1", "role": "developer", "stack": "frontend", "devId": "a7e6b9f2" },
+    { "devName": "Akash", "i": "s1", "role": "developer", "stack": "frontend", "devId": "a7e6b9f2" },
     { "devName": "", "i": "s2", "role": "developer", "stack": "frontend", "devId": "c9d1e0f8" },
     { "devName": "", "i": "s3", "role": "developer", "stack": "frontend", "devId": "b4c8d5e1" },
     { "devName": "morgan", "i": "s4", "role": "developer", "stack": "php", "devId": "f3a7d2b0" },
@@ -92,6 +92,7 @@ export const devList = [
     { "devName": "Riley", "i": "s61", "role": "developer", "stack": "frontend", "devId": "d1524" },
     { "devName": "Jamie", "i": "s62", "role": "developer", "stack": "frontend", "devId": "d3544" },
     { "devName": "Dakota", "i": "s63", "role": "developer", "stack": "backend", "devId": "d5564" },
+    { "devName": "Test Name", "i": "s64", "role": "developer", "stack": "backend", "devId": "d55641" },
     { "devName": "", "i": "s65", "role": "developer", "stack": "frontend", "devId": "d7584" },
     { "devName": "Quinn", "i": "s66", "role": "developer", "stack": "frontend", "devId": "d9604" },
     { "devName": "Taylor", "i": "s67", "role": "developer", "stack": "frontend", "devId": "d1624" },
@@ -109,13 +110,13 @@ export const devList = [
     { "devName": "Siva sankar", "i": "s78", "role": "developer", "stack": "frontend", "devId": "d4" },
     { "devName": "", "i": "s79", "role": "developer", "stack": "frontend", "devId": "d5" },
     { "devName": "Jamie", "i": "s80", "role": "developer", "stack": "frontend", "devId": "d6" },
-    { "devName": "Riley", "i": "s81", "role": "developer", "stack": "backend", "devId": "d7" },
-    { "devName": "samule", "i": "s82", "role": "developer", "stack": "backend", "devId": "d7" },
+    { "devName": "Riley", "i": "s81", "role": "developer", "stack": "backend", "devId": "d71" },
+    { "devName": "samule", "i": "s82", "role": "developer", "stack": "backend", "devId": "d72" },
     { "devName": "Avery", "i": "s83", "role": "developer", "stack": "frontend", "devId": "d8" },
     { "devName": "", "i": "s84", "role": "developer", "stack": "frontend", "devId": "d9" },
     { "devName": "Taylor", "i": "s85", "role": "developer", "stack": "frontend", "devId": "d10" },
-    { "devName": "Quinn", "i": "s86", "role": "developer", "stack": "backend", "devId": "d11" },
-    { "devName": "stark", "i": "s87", "role": "developer", "stack": "backend", "devId": "d11" },
+    { "devName": "Quinn", "i": "s86", "role": "developer", "stack": "backend", "devId": "d111" },
+    { "devName": "stark", "i": "s87", "role": "developer", "stack": "backend", "devId": "d112" },
     { "devName": "Blake", "i": "s88", "role": "developer", "stack": "frontend", "devId": "d12" },
     { "devName": "Emerson", "i": "s89", "role": "developer", "stack": "backend", "devId": "d13" },
     { "devName": "", "i": "s90", "role": "developer", "stack": "frontend", "devId": "d14" },
@@ -124,8 +125,8 @@ export const devList = [
     { "devName": "Jordan", "i": "s93", "role": "developer", "stack": "php", "devId": "d17" },
     { "devName": "", "i": "s94", "role": "developer", "stack": "backend", "devId": "d18" },
     { "devName": "Taylor", "i": "s95", "role": "developer", "stack": "frontend", "devId": "d19" },
-    { "devName": "Morgan", "i": "s96", "role": "developer", "stack": "backend", "devId": "d20" },
-    { "devName": "perry", "i": "s97", "role": "developer", "stack": "backend", "devId": "d20" },
+    { "devName": "Morgan", "i": "s96", "role": "developer", "stack": "backend", "devId": "d201" },
+    { "devName": "perry", "i": "s97", "role": "developer", "stack": "backend", "devId": "d202" },
     { "devName": "", "i": "s98", "role": "developer", "stack": "frontend", "devId": "d21" },
     { "devName": "Quinn", "i": "s99", "role": "developer", "stack": "frontend", "devId": "d22" },
     { "devName": "Dakota", "i": "s100", "role": "developer", "stack": "backend", "devId": "d23" },
@@ -178,6 +179,5 @@ export const devList = [
 
     { "devName": "Taylor 15", "i": "s142", "role": "developer", "stack": "php", "devId": "z5a6b7c8" },
     { "devName": "Taylor 16", "i": "s143", "role": "developer", "stack": "frontend", "devId": "d9e0f1g2" }
-
 
 ]
