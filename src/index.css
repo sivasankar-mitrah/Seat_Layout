@@ -1,0 +1,58 @@
+.seat {
+  background-color: lightgray;
+  border-radius: 5px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  text-align: center;
+}
+
+.php-bg {
+  background-color: #8C8ABB !important;
+}
+
+.cf-bg {
+  background-color: #002155 !important;
+  color: white;
+}
+
+.react-bg {
+  background-color: #EFD81D !important;
+}
+
+.walk-area {
+  background-color: rgb(240 178 207) !important;
+}
+.selected-place {
+  background-color: orange !important;
+}
+
+.dev-area {
+  background-color: lightGrey;
+}
+
+.available-seats {
+  background-color: white !important;
+  border: solid 3px green;
+}
+
+.particular-stack {
+  background-color: white !important;
+  border: solid 3px #002155;
+  background-color: red !important;
+}
+
+.grid-parent-layout {
+  width: 70%;
+  overflow: auto;
+}
+
+.secondElement {
+  padding: 50px;
+  width: 30%;
+  margin-left: 10px;
+  border-left: solid 2px black;
+  /* background-color: gainsboro; */
+}
