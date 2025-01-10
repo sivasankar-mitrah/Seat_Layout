@@ -77,7 +77,7 @@ const App = () => {
   const handleCancel = () => {
     setIsModalOpen(false);
   };
-
+console.log('testttt')
   const handleOpenSideSection = (val) => {
     let tempData = [...selecetedPerson];
     setIsVisible(false);
