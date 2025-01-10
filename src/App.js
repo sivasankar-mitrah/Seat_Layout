@@ -104,7 +104,7 @@ const App = () => {
     },
    
   ];
-
+console.log('testttt')
   const handleOpenSideSection = (val) => {
     let tempData = [...selecetedPerson];
     const isPersonSelected = tempData.some(person => person.devId === val.devId);
