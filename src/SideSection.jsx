@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Flex, Form, Select, Tag } from 'antd';
+import { Button, Flex, Form, Modal, Select, Tag } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
+import { useNotification } from './common/notification';
 // import { devList } from './devList';
 
 // const groupedOptions = [
@@ -30,13 +31,16 @@ export default function DrawerFn
         setIsSubmit,
         setIsDeleteModalOpen,
         selecetedPerson,
+        setSelectedPerson,
         currentLayout,
         setCurrentLayout,
         setOpen,
         setEnableUnOccupiedViews,
         enableUnOccupiedViews,
         show,
-        isVisible
+        isVisible,
+        setUnOccupiedPeople,
+        unOccupiedPeople
     }) {
 
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
@@ -45,11 +49,21 @@ export default function DrawerFn
     const [selectedCurrentEmployee, setSelectedCurrentEmployee] = useState({})
     const [isSwapButtonVisible, setIsSwapButtonVisible] = useState(false);
     const [selectedTag, setSelectedTag] = useState(null);
-    // const [unOccupiedPeople, setUnOccupiedPeople] = useState([])
+    const [isModalOpen, setIsModalOpen] = useState(false);
     // const [selectedUnOccupiedValue, setSelectedUnOccupiedValue] = useState(null);
     // const [selectedSeatmethod, setSelectedSeatMethod] = useState('avail');
+    const api = useNotification();
 
     const values = form.getFieldValue();
+
+    console.log("values", values);
+    useEffect(() => {
+        return (() => {
+
+            form.setFieldsValue({ currentEmployee: null })
+        })
+
+    }, [])
 
     useEffect(() => {
         if (isSubmit) {
@@ -67,6 +81,9 @@ export default function DrawerFn
 
             return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
         })
+        if (selecetedPerson[0]?.unOccupied) {
+            tempData = []
+        }
 
         setPlaceForUnOccupiedPeople(tempData)
         setPlaceForOccupiedPeople(occupiedData);
@@ -90,6 +107,19 @@ export default function DrawerFn
         }
     }, [selecetedPerson])
 
+    const handleConfirmSwap = () => {
+        setIsModalOpen(true);
+    }
+
+    const handleOk = () => {
+        setIsModalOpen(false);
+        handleSwapChange();
+    };
+
+    const handleCancel = () => {
+        setIsModalOpen(false);
+    };
+
     // const getAllPlaces = () => {
     //     return currentLayout.filter((item) => !item?.unchange)?.map((val, dev) => {
     //         return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
@@ -97,6 +127,8 @@ export default function DrawerFn
     // }
 
     const onFinish = (values) => {
+        console.log("valuessssssssss", values);
+        
         let tempData = currentLayout
         let exitingEmployeePositionIdx = values.newEmployee.split(' - ')[1]
         const newEmployeePosition = tempData.findIndex(emp => emp.i === values?.currentEmployee);
@@ -105,34 +137,70 @@ export default function DrawerFn
         let { devName, role, stack, devId } = tempData[newEmployeePosition];
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
         let newEmployeeDevID = tempData[newEmployeePosition].devId
-        if (newEmployeePosition !== -1) {
-            tempData[newEmployeePosition] = {
-                ...selecetedPerson[0],
-                i: values?.currentEmployee,
-                x: tempData[newEmployeePosition].x,
-                y: tempData[newEmployeePosition].y,
-                h: tempData[newEmployeePosition].h,
-                w: tempData[newEmployeePosition].w,
-            };
+        console.log("tempData[newEmployeePosition]", tempData[newEmployeePosition]);
+        console.log("tempData[exitingEmployeePosition]", tempData[exitingEmployeePosition]);
+
+        if (!(selecetedPerson[0]?.unOccupied)) {
+            if (newEmployeePosition !== -1) {
+                tempData[newEmployeePosition] = {
+                    ...selecetedPerson[0],
+                    i: values?.currentEmployee,
+                    x: tempData[newEmployeePosition].x,
+                    y: tempData[newEmployeePosition].y,
+                    h: tempData[newEmployeePosition].h,
+                    w: tempData[newEmployeePosition].w,
+                };
+            }
+            if (exitingEmployeePosition !== -1) {
+                tempData[exitingEmployeePosition] = {
+                    i: exitingEmployeePositionIdx,
+                    x: tempData[exitingEmployeePosition].x,
+                    y: tempData[exitingEmployeePosition].y,
+                    h: tempData[exitingEmployeePosition].h,
+                    w: tempData[exitingEmployeePosition].w,
+                    devName: tempData[exitingEmployeePosition].devName,
+                    stack: tempData[exitingEmployeePosition].stack,
+                    role: "developer",
+                    cls: "available-seats",
+                    unOccupied: true,
+                    devId: newEmployeeDevID
+                };
+            }
+        } else {
+            console.log("selecetedPerson[0] 678", selecetedPerson[0]);
+            if (exitingEmployeePosition !== -1) {
+                tempData[exitingEmployeePosition] = {
+                    i: exitingEmployeePositionIdx,
+                    x: tempData[exitingEmployeePosition].x,
+                    y: tempData[exitingEmployeePosition].y,
+                    h: tempData[exitingEmployeePosition].h,
+                    w: tempData[exitingEmployeePosition].w,
+                    cls: tempData[newEmployeePosition].cls,
+                    devId: tempData[newEmployeePosition].devId,
+                    devName: tempData[newEmployeePosition].devName,
+                    role: tempData[newEmployeePosition].role,
+                    stack: tempData[newEmployeePosition].stack,
+                    unOccupied: tempData[newEmployeePosition].unOccupied,
+                };
+            }
+
+            if (newEmployeePosition !== -1) {
+                tempData[newEmployeePosition] = {
+                    ...selecetedPerson[0],
+                    i: values?.currentEmployee,
+                    x: tempData[newEmployeePosition].x,
+                    y: tempData[newEmployeePosition].y,
+                    h: tempData[newEmployeePosition].h,
+                    w: tempData[newEmployeePosition].w,
+                };
+            }
+
         }
-        if (exitingEmployeePosition !== -1) {
-            tempData[exitingEmployeePosition] = {
-                i: exitingEmployeePositionIdx,
-                x: tempData[exitingEmployeePosition].x,
-                y: tempData[exitingEmployeePosition].y,
-                h: tempData[exitingEmployeePosition].h,
-                w: tempData[exitingEmployeePosition].w,
-                devName: tempData[exitingEmployeePosition].devName,
-                stack: tempData[exitingEmployeePosition].stack,
-                role: "developer",
-                cls: "available-seats",
-                unOccupied: true,
-                devId: newEmployeeDevID
-            };
-        }
+
         setCurrentLayout(tempData)
         setEnableUnOccupiedViews([unoccupiedMemberData])
-        // setOpen(false)
+        setOpen(false)
+        setSelectedPerson([]);
     };
 
     const handlePlaceChange = () => {
@@ -170,6 +238,10 @@ export default function DrawerFn
                 };
             }
             setCurrentLayout([...tempData]);
+            api.info({
+                message: `Swap Done Successfully`,
+                placement: 'topRight',
+            });
         }
     }
 
@@ -200,8 +272,8 @@ export default function DrawerFn
                 autoComplete="off"
                 style={{ position: "fixed" }}
             >
-                {!enableUnOccupiedViews?.length && !isVisible ? <><Form.Item
-                    label="Employee Selected"
+                {!isVisible ? <><Form.Item
+                    label={!(selecetedPerson[0]?.unOccupied) ? "Employee Selected" : `Seat Selected - ${selecetedPerson[0]?.i}`}
                     name="newEmployee"
                     labelCol={{
                         span: 24,
@@ -211,7 +283,14 @@ export default function DrawerFn
                     }}
                 >
                     {/* <Input disabled /> */}
-                    <Profile values={values} show={show} />
+                    {!(selecetedPerson[0]?.unOccupied) && <Profile
+                        values={values}
+                        show={show}
+                        currentLayout={currentLayout}
+                        setCurrentLayout={setCurrentLayout}
+                        setUnOccupiedPeople={setUnOccupiedPeople}
+                        setSelectedPerson={setSelectedPerson}
+                        setOpen={setOpen} />}
                 </Form.Item>
                     <Form.Item
                         label="Current Employee"
@@ -248,7 +327,7 @@ export default function DrawerFn
                             Change
                         </Button>
                         {isSwapButtonVisible &&
-                            <Button onClick={handleSwapChange} type="primary">
+                            <Button onClick={handleConfirmSwap} type="primary">
                                 Swap
                             </Button>
                         }
@@ -297,7 +376,7 @@ export default function DrawerFn
                 {isVisible && <>
                     <Form.Item
                         label="Unoccupied Peoples"
-                        name="unOccupiedPeoples  "
+                        name="newEmployee"
                         labelCol={{
                             span: 24,
                         }}
@@ -306,7 +385,7 @@ export default function DrawerFn
                         }}
                     >
                         <Flex gap={4} wrap align="center">
-                            {currentLayout.filter(dev => dev.unOccupied && dev.devName).map((tag) => (
+                            {unOccupiedPeople.map((tag) => (
                                 <Tag.CheckableTag
                                     className={
                                         tag.stack === 'frontend' ? 'react-bg' :
@@ -358,6 +437,16 @@ export default function DrawerFn
                     </Form.Item>
                 </> : null}
             </Form>
+            <Modal
+                title="Swap User"
+                okText="Yes"
+                okType="primary"
+                open={isModalOpen} onOk={handleOk} onCancel={handleCancel}
+            >
+                <div>
+                    Are you sure you want to Swap the User?
+                </div>
+            </Modal>
         </div>
     )
 }

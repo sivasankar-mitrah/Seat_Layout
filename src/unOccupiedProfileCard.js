@@ -7,7 +7,7 @@ function UnOccupiedProfileCard({values}) {
         <div className='profile'>
             <Avatar shape="square" size={60} icon={<UserOutlined />} />
             <div className='displayDetails'>
-                <p>{values.devName} - { values.i}</p>
+                <p>{values.devName}</p>
                 <p>{values?.stack}</p>
             </div>
         </div>
