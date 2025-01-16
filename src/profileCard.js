@@ -30,12 +30,14 @@ function Profile({ values, show, currentLayout, setCurrentLayout, setUnOccupiedP
                 return {
                     ...item,
                     unOccupied: true,
-                    cls: "available-seats",
+                    cls: "seat empty-seat",
                     devId: "",
                     devName: "",
-                    role: "developer",
+                    role: "",
                     stack: "",
-                    imageUrl: ""
+                    imageUrl: "",
+                    TL_id: "",
+                    seat_id: ""
                 };
             }
             return item;
@@ -43,7 +45,7 @@ function Profile({ values, show, currentLayout, setCurrentLayout, setUnOccupiedP
 
         setCurrentLayout(updatedLayout);
         api.info({
-            message: `${show[0].devName + "-" + show[0].i} removed from the seat successfully`,
+            message: `${show[0].devName} removed from the seat successfully`,
             placement: 'topRight',
         });
     };

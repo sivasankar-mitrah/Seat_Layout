@@ -94,22 +94,16 @@ const App = () => {
     let tempData = [...selecetedPerson];
     setIsVisible(false);
     const isPersonSelected = tempData.some(person => person.i === val.i);
-    if (isPersonSelected) {
-      tempData = tempData.filter(person => person.devId !== val.devId);
-    } else {
-      if (radioValue === 'single') {
-        tempData = [{ ...val }];
-        form.setFieldsValue({
-          newEmployee: `${val.devName} - ${val.i}`,
-        });
-      }
-      else {
-        // if (tempData.find(a => a.i === val.i)) tempData = tempData.filter(a => a.i !== val.i)
-        // else 
-        tempData.push(val);
+
+    if (isPersonSelected) tempData = selecetedPerson.filter(person => person?.i !== val?.i)
+    else {
+      if (radioValue === "single") {
+        form.setFieldsValue({ newEmployee: `${val.devName} - ${val.i}` });
+        tempData = [val]
+      } else {
+        tempData.push(val)
       }
     }
- 
 
     const show = devList.filter((data) => {
       if (data.seat_id === (val.i)) {
@@ -176,6 +170,7 @@ const App = () => {
   const handleDeleteModalOk = () => {
     setIsDeleteModalOpen(false)
     setIsSubmit(true);
+    setSelectBoxGlow({ ...selectBoxGlow, selectStatus: false });
   }
 
   const handleDeleteModalCancel = () => {
@@ -191,17 +186,45 @@ const App = () => {
   }
 
   const handleRemoveMultiple = () => {
-    currentLayout.map((dev) => {
-      if (dev.cls === "selected-place" && dev.devName) {
-        return { ...dev, unOccupied: true };
+    let updatedLayout = currentLayout.map((dev) => {
+      if (dev.cls.includes('selected-place') && dev.devName) {
+        return {
+          ...dev,
+          unOccupied: true,
+          cls: "seat empty-seat",
+          devId: "",
+          devName: "",
+          role: "",
+          stack: "",
+          imageUrl: "",
+          seat_id: "",
+          TL_id: ""
+        };
       }
       return dev
     })
+    let updatedUnoccoupied = currentLayout.map((val) => {
+      if (val.cls.includes('selected-place')) {
+        return {
+          "devName": val.devName,
+          "seat_id": val.seat_id,
+          "role": val.role,
+          "stack": val.stack,
+          "devId": val.devId,
+          "isFresher": val.isFresher,
+          "TL_id": val.TL_id
+        }
+      }
+    })
+    updatedUnoccoupied = updatedUnoccoupied.filter((val) => val?.devId)
+    setUnOccupiedPeople((prev) => [...prev, ...updatedUnoccoupied])
+    setCurrentLayout(updatedLayout)
     api.info({
       message: `Users removed from the seat successfully`,
       placement: 'topRight',
     });
-    setIsModalOpen(false)
+    setIsModalOpen(false);
+    setSelectedPerson([]);
   }
 
   const onChange = (e) => {
@@ -215,9 +238,6 @@ const App = () => {
     setSelectedTags(nextSelectedTags);
   }
 
-  const onVisibleClose = () => {
-    setIsVisible(false)
-  }
   const handleUnoccupiedPeople = () => {
     setIsVisible(true);
     setOpen(true);
@@ -349,28 +369,13 @@ const App = () => {
             setSelectBoxGlow={setSelectBoxGlow}
             selectBoxGlow={selectBoxGlow}
           /></div > : null}
-        {/* <Drawer title="UnOccupied Peoples" onClose={onVisibleClose} open={isVisible}>
-          <Flex gap={4} wrap align="center">
-            {currentLayout.filter(dev => dev.unOccupied && dev.devName).map((tag) => (
-              <Tag.CheckableTag
-                className={tag.stack === 'frontend' ? 'react-bg' : tag.stack === 'php' ? 'php-bg' : tag.stack === 'backend' ? 'cf-bg' : ""}
-                key={tag}
-                checked={selectedTags.includes(tag)}
-                onChange={(checked) => handleTagChange(tag, checked)}
-              >
-                {tag.devName}
-              </Tag.CheckableTag>
-            ))}
-          </Flex>
-        </Drawer> */}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-
-        <div>
-          Are you sue you want to remove the Multiple developers to unoccupied Positons
+        <div className='mt-3 mb-3'>
+          Are you sue you want to remove the Multiple developers to unoccupied Positons?
         </div>
-        <div className='my-2'>
-          {currentLayout.filter(dev => dev.cls === "selected-place" && dev.devName).map((tag) => (
+        <div className='my-2 pb-2'>
+          {currentLayout.filter(dev => dev.cls.includes("selected-place") && dev.devName).map((tag) => (
             <Tag
               key={tag}
               checked={selectedTags.includes(tag)}
@@ -380,40 +385,14 @@ const App = () => {
             </Tag>
           ))}
         </div>
-        <Button onClick={() => { handleRemoveMultiple() }}>
+        <Button onClick={handleRemoveMultiple}>
           Remove
         </Button>
-        {/* <Select defaultValue="apple" style={{ width: 200 }}>
-          {groupedOptions.map(group => (
-            <OptGroup key={group.label} label={group.label}>
-              {group.options.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </OptGroup>
-          ))}
-        </Select> */}
-
-        {/* <Flex gap={4} wrap align="center"> */}
-
-        {/* </Flex> */}
       </Modal>
       <Modal title="Save Alert" open={isCompleteModalOpen} onOk={() => setIsCompleteModalOpen(false)} onCancel={() => setIsCompleteModalOpen(false)} okText="Yes" okType="primary">
         <div>
           Are you sure you want to save the changes?
         </div>
-        {/* <div className='my-2'>
-          {currentLayout.filter(dev => dev.cls === "selected-place" && dev.devName).map((tag) => (
-            <Tag
-              key={tag}
-              checked={selectedTags.includes(tag)}
-              onChange={(checked) => handleTagChange(tag, checked)}
-            >
-              {tag.devName}
-            </Tag>
-          ))}
-        </div> */}
       </Modal>
       <Modal
         title="Change User"

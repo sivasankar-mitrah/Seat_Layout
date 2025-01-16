@@ -3,26 +3,7 @@ import { Button, Flex, Form, Modal, Select, Tag } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
 import { useNotification } from './common/notification';
-// import { devList } from './devList';
 
-// const groupedOptions = [
-//     {
-//         label: 'UnOcuupied',
-//         options: [
-//             { value: 'apple', label: 'Apple' },
-//             { value: 'banana', label: 'Banana' },
-//             { value: 'orange', label: 'Orange' }
-//         ]
-//     },
-//     {
-//         label: 'Occupied',
-//         options: [
-//             { value: 'carrot', label: 'Carrot' },
-//             { value: 'broccoli', label: 'Broccoli' },
-//             { value: 'spinach', label: 'Spinach' }
-//         ]
-//     },
-// ];
 
 export default function DrawerFn
     ({
@@ -52,8 +33,10 @@ export default function DrawerFn
     const [isSwapButtonVisible, setIsSwapButtonVisible] = useState(false);
     const [selectedTag, setSelectedTag] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // const [selectedUnOccupiedValue, setSelectedUnOccupiedValue] = useState(null);
-    // const [selectedSeatmethod, setSelectedSeatMethod] = useState('avail');
+    const [placeForunOccupiedSeats, setPlaceForUnOccupiedSeats] = useState([])
+    const [unOccupiedselectedSeat, setUnOccupiedselectedSeat] = useState("")
+    const [readMore, setReadMore] = useState(true);
+    const [devoption, setDevoption] = useState([])
     const api = useNotification();
 
     const values = form.getFieldValue();
@@ -67,35 +50,60 @@ export default function DrawerFn
     }, [])
 
     useEffect(() => {
+        let updatedOption = [
+            {
+                label: <span>UnOccupied</span>,
+                title: 'un-occupied',
+                options: placeForunOccupiedPeople,
+            },
+            {
+                label: <span>Occupied</span>,
+                title: 'ocupied',
+                options: placeForOccupiedPeople,
+            },
+        ]
+
+        if (!selecetedPerson[0]?.seat_id) {
+            updatedOption = updatedOption.filter((val) => val.title === 'ocupied')
+        }
+
+        setDevoption(updatedOption)
+    }, [placeForOccupiedPeople, placeForunOccupiedPeople])
+
+    useEffect(() => {
         if (isSubmit) {
             form.submit()
-            // onFinish()
             setIsSubmit(false)
         }
     }, [isSubmit])
 
     useEffect(() => {
-        let tempData = currentLayout.filter((item) => item.unOccupied && item.i !== selecetedPerson?.[0]?.i).map((val) => {
+        let tempData = currentLayout.filter((item) => !item.seat_id && item.i !== selecetedPerson?.[0]?.i && !item.unchange).map((val) => {
             return { ...val, label: ` ${val.i}`, value: `${val.i}` }
         })
-        let occupiedData = currentLayout.filter((item) => !item.unOccupied && !item.unchange && item.i !== selecetedPerson?.[0]?.i).map((val) => {
+        let occupiedData = currentLayout.filter((item) => item.seat_id && !item.unchange && item.i !== selecetedPerson?.[0]?.i).map((val) => {
 
             return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
         })
-        if (selecetedPerson[0]?.unOccupied) {
+        if (!(selecetedPerson[0]?.seat_id)) {
             tempData = []
         }
 
+        let seatData = currentLayout.filter(data => data.devId === "" && !data.emptyArea
+        ).map((val) => {
+            return { ...val, label: ` ${val.i}`, value: `${val.i}` }
+        })
+
+        setPlaceForUnOccupiedSeats(seatData)
+
         setPlaceForUnOccupiedPeople(tempData)
         setPlaceForOccupiedPeople(occupiedData);
-        // let data2 = getAllPlaces();
-        // setUnOccupiedPeople(data2)
     }, [selecetedPerson])
 
     useEffect(() => {
         if (selecetedPerson[0]?.i) {
             if (selectedCurrentEmployee?.i) {
-                if (!(selectedCurrentEmployee?.unOccupied === true) && !(selecetedPerson[0]?.unOccupied === true)) {
+                if ((selectedCurrentEmployee?.seat_id) && selecetedPerson[0]?.seat_id) {
                     setIsSwapButtonVisible(true)
                 } else {
                     setIsSwapButtonVisible(false)
@@ -106,7 +114,26 @@ export default function DrawerFn
         } else {
             setIsSwapButtonVisible(false)
         }
-    }, [selecetedPerson])
+    }, [selecetedPerson, selectedCurrentEmployee])
+
+    const handleUnOccupiedSeatSelect = (val) => {
+        setUnOccupiedselectedSeat(val)
+        setSelectBoxGlow({ selectStatus: true, seatName: val });
+    }
+
+    const handleSetOccupuiedSeatChange = () => {
+        const seatIndex = currentLayout.findIndex(item => item.i === unOccupiedselectedSeat)
+        setUnOccupiedPeople(prev => prev.filter((value) => value.devId !== selectedTag.devId))
+        const updatedCurrentLayout = currentLayout.map((value, index) => {
+            if (index === seatIndex) {
+                return { ...value, cls: "seat", devName: selectedTag.devName, seat_id: value.i, role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
+            }
+            return value
+        })
+        form.setFieldsValue({ UnOccupiedSeats: null });
+        setSelectBoxGlow({ seatName: "", selectStatus: true });
+        setCurrentLayout(updatedCurrentLayout);
+    }
 
     const handleConfirmSwap = () => {
         setIsModalOpen(true);
@@ -123,12 +150,6 @@ export default function DrawerFn
         setIsModalOpen(false);
     };
 
-    // const getAllPlaces = () => {
-    //     return currentLayout.filter((item) => !item?.unchange)?.map((val, dev) => {
-    //         return { ...val, label: `${val.devName} - ${val.i}`, value: `${val.i}` }
-    //     })
-    // }
-
     const onFinish = (values) => {
         let tempData = currentLayout
         let exitingEmployeePositionIdx = values.newEmployee.split(' - ')[1]
@@ -137,67 +158,65 @@ export default function DrawerFn
 
         let { devName, role, stack, devId } = tempData[newEmployeePosition];
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
-        let newEmployeeDevID = tempData[newEmployeePosition].devId;
 
-        if (!(selecetedPerson[0]?.unOccupied)) {
-            if (newEmployeePosition !== -1) {
-                tempData[newEmployeePosition] = {
-                    ...selecetedPerson[0],
-                    i: values?.currentEmployee,
-                    x: tempData[newEmployeePosition].x,
-                    y: tempData[newEmployeePosition].y,
-                    h: tempData[newEmployeePosition].h,
-                    w: tempData[newEmployeePosition].w,
-                };
+        const handleUpdatedDataCheck = (data) => data.replace("selected-place", "")
+
+        const updatedData = tempData.map((item, index) => {
+            if (tempData[exitingEmployeePosition].seat_id === "") {
+                if (index === newEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls),
+                    devName: currentLayout[exitingEmployeePosition]?.devName,
+                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+                    role: currentLayout[exitingEmployeePosition]?.role,
+                    stack: currentLayout[exitingEmployeePosition]?.stack,
+                    devId: currentLayout[exitingEmployeePosition]?.devId,
+                    isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+                }
+                else if (index === exitingEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+                    devName: currentLayout[newEmployeePosition]?.devName,
+                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
+                    role: currentLayout[newEmployeePosition]?.role,
+                    stack: currentLayout[newEmployeePosition]?.stack,
+                    devId: currentLayout[newEmployeePosition]?.devId,
+                    isFresher: currentLayout[newEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[newEmployeePosition]?.TL_id
+                }
+                else return item
             }
-            if (exitingEmployeePosition !== -1) {
-                tempData[exitingEmployeePosition] = {
-                    i: exitingEmployeePositionIdx,
-                    x: tempData[exitingEmployeePosition].x,
-                    y: tempData[exitingEmployeePosition].y,
-                    h: tempData[exitingEmployeePosition].h,
-                    w: tempData[exitingEmployeePosition].w,
-                    devName: tempData[exitingEmployeePosition].devName,
-                    stack: tempData[exitingEmployeePosition].stack,
-                    role: "developer",
-                    cls: "available-seats",
-                    unOccupied: true,
-                    devId: newEmployeeDevID
-                };
-            }
-        } else {
-            if (exitingEmployeePosition !== -1) {
-                tempData[exitingEmployeePosition] = {
-                    i: exitingEmployeePositionIdx,
-                    x: tempData[exitingEmployeePosition].x,
-                    y: tempData[exitingEmployeePosition].y,
-                    h: tempData[exitingEmployeePosition].h,
-                    w: tempData[exitingEmployeePosition].w,
-                    cls: tempData[newEmployeePosition].cls,
-                    devId: tempData[newEmployeePosition].devId,
-                    devName: tempData[newEmployeePosition].devName,
-                    role: tempData[newEmployeePosition].role,
-                    stack: tempData[newEmployeePosition].stack,
-                    unOccupied: tempData[newEmployeePosition].unOccupied,
-                };
+            else if (tempData[newEmployeePosition].seat_id === "") {
+                if (index === exitingEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+                    devName: currentLayout[newEmployeePosition]?.devName,
+                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
+                    role: currentLayout[newEmployeePosition]?.role,
+                    stack: currentLayout[newEmployeePosition]?.stack,
+                    devId: currentLayout[newEmployeePosition]?.devId,
+                    isFresher: currentLayout[newEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[newEmployeePosition]?.TL_id
+                }
+                else if (index === newEmployeePosition) return {
+                    ...item,
+                    cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
+                    devName: currentLayout[exitingEmployeePosition]?.devName,
+                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+                    role: currentLayout[exitingEmployeePosition]?.role,
+                    stack: currentLayout[exitingEmployeePosition]?.stack,
+                    devId: currentLayout[exitingEmployeePosition]?.devId,
+                    isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+                }
+                else return item
             }
 
-            if (newEmployeePosition !== -1) {
-                tempData[newEmployeePosition] = {
-                    ...selecetedPerson[0],
-                    i: values?.currentEmployee,
-                    x: tempData[newEmployeePosition].x,
-                    y: tempData[newEmployeePosition].y,
-                    h: tempData[newEmployeePosition].h,
-                    w: tempData[newEmployeePosition].w,
-                };
-            }
-
-        }
-
-        setCurrentLayout(tempData)
-        setEnableUnOccupiedViews([unoccupiedMemberData])
+        })
         setOpen(false)
+        setCurrentLayout([...updatedData]);
+        setEnableUnOccupiedViews([unoccupiedMemberData])
         setSelectedPerson([]);
     };
 
@@ -205,10 +224,6 @@ export default function DrawerFn
 
         setIsDeleteModalOpen(true)
     }
-
-    // const handleSelectChange = (val) => {
-    //     setIsButtonVisible(false)
-    // }
 
     const handleSwapChange = () => {
         if (selecetedPerson[0]?.i && selectedCurrentEmployee?.i) {
@@ -223,7 +238,9 @@ export default function DrawerFn
                     devName: selectedCurrentEmployee.devName,
                     role: selectedCurrentEmployee.role,
                     stack: selectedCurrentEmployee.stack,
-                    devId: selectedCurrentEmployee.devId
+                    devId: selectedCurrentEmployee.devId,
+                    TL_id: selectedCurrentEmployee.TL_id
+
                 };
             }
             if (selectedCurrentIndex !== -1) {
@@ -233,7 +250,8 @@ export default function DrawerFn
                     devName: selecetedPerson[0].devName,
                     role: selecetedPerson[0].role,
                     stack: selecetedPerson[0].stack,
-                    devId: selecetedPerson[0].devId
+                    devId: selecetedPerson[0].devId,
+                    TL_id: selecetedPerson[0].TL_id
                 };
             }
             setCurrentLayout([...tempData]);
@@ -263,6 +281,7 @@ export default function DrawerFn
     const handleTagChange = (tag, checked) => {
         const nextSelectedTag = checked ? tag : null
         setSelectedTag(nextSelectedTag);
+        setReadMore(true);
     };
 
 
@@ -277,7 +296,7 @@ export default function DrawerFn
                 style={{ position: "fixed" }}
             >
                 {!isVisible ? <><Form.Item
-                    label={!(selecetedPerson[0]?.unOccupied) ? "Employee Selected" : `Seat Selected - ${selecetedPerson[0]?.i}`}
+                    label={(selecetedPerson[0]?.seat_id) ? "Employee Selected" : `Seat ${selecetedPerson[0]?.i} is currently available!`}
                     name="newEmployee"
                     labelCol={{
                         span: 24,
@@ -287,7 +306,7 @@ export default function DrawerFn
                     }}
                 >
                     {/* <Input disabled /> */}
-                    {!(selecetedPerson[0]?.unOccupied) && <Profile
+                    {(selecetedPerson[0]?.seat_id) !== "" && <Profile
                         values={values}
                         show={show}
                         currentLayout={currentLayout}
@@ -311,18 +330,7 @@ export default function DrawerFn
                             className='ms-2'
                             showSearch
                             placeholder="Select New Employee"
-                            options={[
-                                {
-                                    label: <span>UnOccupied</span>,
-                                    title: 'un-occupied',
-                                    options: placeForunOccupiedPeople,
-                                },
-                                {
-                                    label: <span>Occupied</span>,
-                                    title: 'ocupied',
-                                    options: placeForOccupiedPeople,
-                                },
-                            ]}
+                            options={devoption}
                             onChange={handleOccupuiedChange}
                         />
                     </Form.Item>
@@ -336,47 +344,7 @@ export default function DrawerFn
                             </Button>
                         }
                     </Form.Item>
-                </> : <>
-                    {/* <Form.Item
-                        label="UnOccupied Persons"
-                        name="unoccupiedPersons"
-                        labelCol={{
-                            span: 24,
-                        }}
-                        wrapperCol={{
-                            span: 24,
-                        }}
-                    >
-                        <Select
-                            className='ms-2'
-                            showSearch
-                            placeholder="Select UnOccupiedEmployee"
-                            options={enableUnOccupiedViews}
-                            onChange={handleChange}
-                        />
-                    </Form.Item> */}
-                    {/* {selectedUnOccupiedValue?.length ? <> <Form.Item> <Radio.Group onChange={onChange} value={selectedSeatmethod}>
-                        <Radio value={'avail'}>Select Available Places</Radio>
-                        <Radio value={'exist'}>Select ExistingPlace</Radio>
-                    </Radio.Group></Form.Item>   <Form.Item
-                        labelCol={{
-                            span: 24,
-                        }}
-                        wrapperCol={{
-                            span: 24,
-                        }}
-                        label="Select place for UnOccupied Persons"
-                        name="UnOccupiedPersonPlace"
-                        className='d-flex flex-column'
-                    >
-                            <Select
-                                className='ms-2'
-                                showSearch
-                                placeholder="Select New Employee"
-                                options={placeForunOccupiedPeople}
-                            />
-                        </Form.Item></> : null} */}
-                </>}
+                </> : null}
                 {isVisible && <>
                     <Form.Item
                         label="Unoccupied Peoples"
@@ -388,13 +356,13 @@ export default function DrawerFn
                             span: 24,
                         }}
                     >
-                        <Flex gap={4} wrap align="center">
-                            {unOccupiedPeople.map((tag, index) => (
+                        <Flex gap={8} wrap align="center">
+                            {unOccupiedPeople.filter((_, i) => (!!readMore && i < 5) || !readMore).map((tag, index) => (
                                 <Tag.CheckableTag
                                     className={
-                                        tag.stack === 'frontend' ? 'react-bg' :
-                                            tag.stack === 'php' ? 'php-bg' :
-                                                tag.stack === 'backend' ? 'cf-bg' : ""
+                                        tag.stack === 'frontend' ? 'react-bg ' :
+                                            tag.stack === 'php' ? 'php-bg ' :
+                                                tag.stack === 'backend' ? 'cf-bg ' : ""
                                     }
                                     key={index}
                                     checked={selectedTag === tag}
@@ -403,38 +371,44 @@ export default function DrawerFn
                                     {tag.devName}
                                 </Tag.CheckableTag>
                             ))}
+                            <Button color="primary" onClick={() => setReadMore(!readMore)} variant="link">
+                                {readMore ? "Read More" : "Read Less"}
+                            </Button>
                         </Flex>
+                        <Button color="danger" variant="solid" className='mt-3'>
+                            Random Order
+                        </Button>
                     </Form.Item>
                 </>}
-                {selectedTag ? <>
+                {isVisible && selectedTag ? <>
                     <UnOccupiedProfileCard values={selectedTag} />
                     <Form.Item
-                        label="Current Employee"
-                        name="currentEmployee"
+                        label="UnOccupied Seats"
+                        name="UnOccupiedSeats"
                         labelCol={{
                             span: 24,
                         }}
                         wrapperCol={{
-                            span: 24,
+                            span: 22,
                         }}
                         rules={[{ required: true, message: 'Please input your name!' }]}
                     >
                         <Select
                             className='ms-2'
                             showSearch
-                            placeholder="Select New Employee"
+                            placeholder="Select Seat"
                             options={[
                                 {
-                                    label: <span>UnOccupied</span>,
+                                    label: <span>UnOccupied Seats</span>,
                                     title: 'un-occupied',
-                                    options: placeForunOccupiedPeople,
+                                    options: placeForunOccupiedSeats,
                                 }
                             ]}
-                            onChange={handleOccupuiedChange}
+                            onChange={handleUnOccupiedSeatSelect}
                         />
                     </Form.Item>
                     <Form.Item className='d-flex justify-content-center mt-4'>
-                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
+                        <Button className='mx-2' onClick={handleSetOccupuiedSeatChange} type="primary">
                             Change
                         </Button>
                     </Form.Item>

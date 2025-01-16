@@ -1,27 +1,4 @@
 export const devList = [
-    { i: 'M1', },
-    { i: 'M2', },
-    { i: 'M3', },
-    { i: 'SR', },
-    { i: 'A1', },
-
-    { i: 'G1', },
-    { i: 'G2' },
-    // { i: 'B', x: 11, y: 13, w: 15, h: 9, emptyArea: true, building: true },
-    { i: 'HR-G', },
-
-    { i: 'E1', },
-    { i: 'E2', },
-    { i: 'E3', },
-    { i: 'E4', },
-    { i: 'E5' },
-    { i: 'E6', },
-    { i: 'E7', },
-    { i: 'E8', },
-    { i: 'E9 Sofa', },
-    { i: 'E10', },
-    { i: 'E11', },
-    { i: 'E12' },
 
     { "devName": "Akash", "seat_id": "s1", "role": "developer", "stack": "frontend", "devId": "a7e6b9f2", "isFresher": false, "TL_id": "a7e6b9f2" },
     { "devName": "Ranjith", "seat_id": "s2", "role": "developer", "stack": "frontend", "devId": "c9d1e0f8", "isFresher": false, "TL_id": "a7e6b9f2" },

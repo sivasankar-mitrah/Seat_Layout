@@ -133,8 +133,7 @@ export const layouts = {
     { i: 's100', x: 19, y: 8, w: 1, h: 1, cls: '', unOccupied: false  },
     { i: 's101', x: 20, y: 8, w: 1, h: 1, cls: '', unOccupied: false  },
     { i: 's102', x: 21, y: 8, w: 1, h: 1, cls: '', unOccupied: false  },
-    { i: 'SR-2', x: 22, y: 8, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true },
-   
+    { i: 'SR-2', x: 22, y: 8, w: 1, h: 1, cls: '', unOccupied: false, emptyArea: true,unchange: true },
    
    
    
