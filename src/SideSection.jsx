@@ -40,7 +40,9 @@ export default function DrawerFn
         show,
         isVisible,
         setUnOccupiedPeople,
-        unOccupiedPeople
+        unOccupiedPeople,
+        setSelectBoxGlow,      // setState of the glow box 
+        selectBoxGlow       //State if the glow box while slecting
     }) {
 
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
@@ -56,7 +58,6 @@ export default function DrawerFn
 
     const values = form.getFieldValue();
 
-    console.log("values", values);
     useEffect(() => {
         return (() => {
 
@@ -112,8 +113,10 @@ export default function DrawerFn
     }
 
     const handleOk = () => {
+        setSelectBoxGlow({ ...selectBoxGlow, selectStatus: false }); //setState of the glowbox status to false to stop the glow while clicking the change button    
         setIsModalOpen(false);
         handleSwapChange();
+        setOpen(false);
     };
 
     const handleCancel = () => {
@@ -127,8 +130,6 @@ export default function DrawerFn
     // }
 
     const onFinish = (values) => {
-        console.log("valuessssssssss", values);
-        
         let tempData = currentLayout
         let exitingEmployeePositionIdx = values.newEmployee.split(' - ')[1]
         const newEmployeePosition = tempData.findIndex(emp => emp.i === values?.currentEmployee);
@@ -136,9 +137,7 @@ export default function DrawerFn
 
         let { devName, role, stack, devId } = tempData[newEmployeePosition];
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
-        let newEmployeeDevID = tempData[newEmployeePosition].devId
-        console.log("tempData[newEmployeePosition]", tempData[newEmployeePosition]);
-        console.log("tempData[exitingEmployeePosition]", tempData[exitingEmployeePosition]);
+        let newEmployeeDevID = tempData[newEmployeePosition].devId;
 
         if (!(selecetedPerson[0]?.unOccupied)) {
             if (newEmployeePosition !== -1) {
@@ -167,7 +166,6 @@ export default function DrawerFn
                 };
             }
         } else {
-            console.log("selecetedPerson[0] 678", selecetedPerson[0]);
             if (exitingEmployeePosition !== -1) {
                 tempData[exitingEmployeePosition] = {
                     i: exitingEmployeePositionIdx,
@@ -204,6 +202,7 @@ export default function DrawerFn
     };
 
     const handlePlaceChange = () => {
+
         setIsDeleteModalOpen(true)
     }
 
@@ -254,6 +253,11 @@ export default function DrawerFn
         } else {
             setIsSwapButtonVisible(false)
         }
+        setSelectBoxGlow({ selectStatus: true, seatName: val });  // seting the status to true and seatname as the selected seat name
+
+        const posElement = document.getElementById(val).getBoundingClientRect();
+        const coordinate = { x: posElement.left, y: posElement.top }
+        document.getElementById("parentLayout").scrollLeft = (coordinate.x - 180);
     }
 
     const handleTagChange = (tag, checked) => {
@@ -376,7 +380,7 @@ export default function DrawerFn
                 {isVisible && <>
                     <Form.Item
                         label="Unoccupied Peoples"
-                        name="newEmployee"
+                        name="unOccupied"
                         labelCol={{
                             span: 24,
                         }}
@@ -385,14 +389,14 @@ export default function DrawerFn
                         }}
                     >
                         <Flex gap={4} wrap align="center">
-                            {unOccupiedPeople.map((tag) => (
+                            {unOccupiedPeople.map((tag, index) => (
                                 <Tag.CheckableTag
                                     className={
                                         tag.stack === 'frontend' ? 'react-bg' :
                                             tag.stack === 'php' ? 'php-bg' :
                                                 tag.stack === 'backend' ? 'cf-bg' : ""
                                     }
-                                    key={tag}
+                                    key={index}
                                     checked={selectedTag === tag}
                                     onChange={(checked) => handleTagChange(tag, checked)}
                                 >
@@ -402,7 +406,6 @@ export default function DrawerFn
                         </Flex>
                     </Form.Item>
                 </>}
-                {console.log(`SideSection.jsx 315 selectedTag---->`, selectedTag?.length)}
                 {selectedTag ? <>
                     <UnOccupiedProfileCard values={selectedTag} />
                     <Form.Item

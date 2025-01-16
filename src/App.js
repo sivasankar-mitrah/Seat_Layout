@@ -13,6 +13,7 @@ import { useNotification } from './common/notification';
 const App = () => {
   const { Header, Content, } = Layout;
   const [open, setOpen] = useState(false);
+  const [selectedStack, setselectedStack] = useState("All")
   const [currentLayout, setCurrentLayout] = useState([]);
   const [selecetedPerson, setSelectedPerson] = useState([]);
   const [enableUnOccupiedViews, setEnableUnOccupiedViews] = useState([])
@@ -26,34 +27,35 @@ const App = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [unOccupiedPeople, setUnOccupiedPeople] = useState([]);
   const api = useNotification();
+  const [selectBoxGlow, setSelectBoxGlow] = useState({ seatName: "", selectStatus: true }); // Seat Glow while Selecting inputs
 
-  console.log("unOccupiedPeople", unOccupiedPeople, ":::::::::::::::", currentLayout);
 
 
   const [form] = Form.useForm();
 
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
+
   useEffect(() => {
     let combinedArr = layouts.layout1.map(item1 => {
-      let item2 = devList.find(item => item.i === item1.i);
-      return { ...item1, ...item2 };
-    });
-    let data = combinedArr.map((item, index) => {
-      if (item?.unOccupied && (item.role === "developer")) {
-        return { ...item, cls: `${item.cls} available-seats` }
-      } else {
-        return { ...item }
+      if (!item1.unchange) {
+        let item2 = devList.find(item => item.seat_id === item1.i) || { "devName": "", "seat_id": "", "role": "", "stack": "", "devId": "", "isFresher": null, "TL_id": "" };
+        return { ...item1, ...item2 };
       }
+      else return item1;
+    }).map(a => (a.seat_id === "") ? ({ ...a, cls: "seat empty-seat" }) : ({ ...a, cls: "seat" }));
 
-    })
-    setCurrentLayout(data)
+    const remainingDevs = devList.filter((dev) => !dev.seat_id);
+    setUnOccupiedPeople(remainingDevs);
+    setCurrentLayout(combinedArr)
     setSelectedPerson([]);
   }, [])
 
   useEffect(() => {
-    const value = selecetedPerson?.[0]
+    setOpen(currentLayout.some(item => item.cls.includes("selected-place")));
+  }, [currentLayout])
+
+
+  useEffect(() => {
+    const value = selecetedPerson?.[0];
     if (radioValue === 'single' && value) {
       let combinedArr = layouts.layout1.map(item1 => {
         let item2 = devList.find(item => item.i === item1.i);
@@ -70,15 +72,25 @@ const App = () => {
         }
       })
       setSelectedPerson([value])
-      setCurrentLayout(data)
+      setCurrentLayout(currentLayout.map(a => {
+        if (a.i === value.i) return { ...a, cls: "seat selected-place" }
+        else return (a.seat_id === "") ? { ...a, cls: "seat empty-seat" } : { ...a, cls: "seat" }
+      }))
+      setselectedStack("All");
     }
+
   }, [radioValue])
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+  };
+
 
   const handleCancel = () => {
     setIsModalOpen(false);
   };
-console.log('testttt')
   const handleOpenSideSection = (val) => {
+
     let tempData = [...selecetedPerson];
     setIsVisible(false);
     const isPersonSelected = tempData.some(person => person.i === val.i);
@@ -90,57 +102,59 @@ console.log('testttt')
         form.setFieldsValue({
           newEmployee: `${val.devName} - ${val.i}`,
         });
-        setOpen(true);
-      } else {
+      }
+      else {
+        // if (tempData.find(a => a.i === val.i)) tempData = tempData.filter(a => a.i !== val.i)
+        // else 
         tempData.push(val);
       }
     }
-    const updatedLayout = currentLayout.map(item => {
-      const match = tempData.find(dataItem => dataItem.devId === item.devId);
-
-      const clsMapping = [
-        { condition: match, cls: 'selected-place' }
-      ];
-
-      if (radioValue === "single") {
-        if (match?.i === item.i) {
-          item.cls = clsMapping.find(mapping => mapping.condition)?.cls;
-        } else {
-          if (item?.unOccupied && (item.role === "developer")) {
-            return { ...item, cls: " available-seats" }
-          } else if (item.cls === 'selected-place') {
-            return { ...item, cls: "" }
-          }
-        }
-      } else if (radioValue === "multiple") {
-        if (val?.cls === "selected-place" && (val?.i === item.i)) {
-          if (item?.unOccupied && (item.role === "developer")) {
-            return { ...item, cls: " available-seats" }
-          } else if (item.cls === 'selected-place') {
-            return { ...item, cls: "" }
-          }
-        } else {
-          if (match?.i) {
-            item.cls = clsMapping.find(mapping => mapping.condition)?.cls;
-          }
-        }
-      }
-      return item;
-    });
+ 
 
     const show = devList.filter((data) => {
-      if (data.i === (val.i)) {
+      if (data.seat_id === (val.i)) {
         return data.stack
       }
     })
-
-    setDisplayStack(show)
-
-    setCurrentLayout(updatedLayout);
     setSelectedPerson(tempData);
+    setDisplayStack(show);
+    const updatedLayout = currentLayout.map(item => {
+      const itemStyle = (item.seat_id === "") ? `seat empty-seat selected-place` : `seat selected-place`
+      if (tempData.some(a => a.i === val.i)) {
+        if (radioValue === "single") {
+          if (tempData.some(a => a.i === val.i)) {
+            if (item.i === val.i) return ({ ...item, cls: itemStyle })
+            else return item.seat_id === "" ? { ...item, cls: "seat empty-seat" } : { ...item, cls: "seat" }
+          }
+        }
+        else if (radioValue === "multiple") {
+          if (tempData.some(a => a.i === item.i)) return { ...item, cls: "seat selected-place" }
+          else return item.seat_id === "" ? { ...item, cls: "seat empty-seat" } : { ...item, cls: "seat" }
+        }
+      }
+      else {
+        if (item.i === val.i) {
+          return item.seat_id === "" ? { ...item, cls: "seat empty-seat" } : { ...item, cls: "seat" }
+        }
+        else return item
+      }
+    })
+    // setselectedStack("All")
+    const finalUpdatedLayout = updatedLayout.map(item => {
+      if (selectedStack === "All") return item;
+      else if (item.stack === selectedStack) {
+        if (item.cls.includes("selected-place")) return { ...item, cls: item.cls };
+        else return { ...item, cls: `${selectedStack} ${item.cls}` };
+      }
+      else return item;
+    })
+    setCurrentLayout(finalUpdatedLayout);
+    // setCurrentLayout(updatedLayout);
   };
 
   const handleSelectStack = (value) => {
+    setSelectedPerson([])
+    setselectedStack(value)
     const stackClasses = {
       php: 'php-bg',
       backend: 'cf-bg',
@@ -150,19 +164,18 @@ console.log('testttt')
     const updatedLayout = currentLayout.map(item => {
       const clsMapping = [
         { condition: !item?.devName && !item.emptyArea && !item?.unchange, cls: 'available-seats' },
-        { condition: item?.devName && item.stack === value && !item.emptyArea, cls: `${item.cls} ${selecedStack}` },
+        { condition: item?.devName && item.stack === value && !item.emptyArea, cls: `seat ${selecedStack}` },
         { condition: true, cls: '' }
       ];
-      const cls = clsMapping.find(mapping => mapping.condition)?.cls || '';
+      const cls = clsMapping.find(mapping => mapping.condition)?.cls || 'seat';
       return { ...item, cls };
     });
-    setCurrentLayout(updatedLayout);
+    setCurrentLayout(updatedLayout.map(a => (a.seat_id === "") ? ({ ...a, cls: "seat empty-seat" }) : ({ ...a })));
   };
 
   const handleDeleteModalOk = () => {
     setIsDeleteModalOpen(false)
     setIsSubmit(true);
-    // setOpen(false);
   }
 
   const handleDeleteModalCancel = () => {
@@ -206,8 +219,8 @@ console.log('testttt')
     setIsVisible(false)
   }
   const handleUnoccupiedPeople = () => {
-    setOpen(true)
-    setIsVisible(true)
+    setIsVisible(true);
+    setOpen(true);
   }
 
   return (
@@ -231,6 +244,7 @@ console.log('testttt')
           onChange={handleSelectStack}
           showSearch
           placeholder="Select Stack"
+          value={selectedStack}
           options={[
             {
               value: 'frontend',
@@ -256,7 +270,8 @@ console.log('testttt')
             <Radio value={'multiple'}><div style={{ color: "white" }}>Multiple</div></Radio>
           </Space>
         </Radio.Group>
-        {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary" onClick={onHandleSelect}>Selected </Button>}
+        {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary"
+          onClick={onHandleSelect}>Selected </Button>}
         <Button type="primary" onClick={onHandleComplete}>Complete </Button>
         <Button type="primary" onClick={handleUnoccupiedPeople} >UnOccupied Peoples </Button>
 
@@ -267,7 +282,7 @@ console.log('testttt')
           padding: '0 48px',
         }}
       >
-        <div className='grid-parent-layout'>
+        <div className='grid-parent-layout' id='parentLayout'>
           <GridLayout
             className="layout"
             rowHeight={30}
@@ -281,37 +296,59 @@ console.log('testttt')
 
             {currentLayout?.map((val, index) => {
               return <div
-                title={val.devName}
+                title={val?.devName}
                 onClick={() => { !val?.unchange && handleOpenSideSection(val); }}
                 style={{ cursor: 'pointer' }}
                 data-grid={{ x: val.x, y: val.y, w: val.w, h: val.h, }}
                 key={val?.i}
-                className={`seat ${val.cls} ${val.cusClass} ${val.emptyArea ? 'walk-area' : 'dev-area'}`}
+
+                id={val?.i} // id to DOM scroll while select the seat
+
+                //seat ${val.cls} ${val.cusClass} ${val.emptyArea ? 'walk-area' : 'dev-area'} 
+                // className={`
+                // seat 
+                // ${val.cls} 
+                // ${val.emptyArea ? 'walk-area':val.unchange && "unchange-cells"}
+                // ${val.seat_id ==="" && "empty-seat"} 
+                //  ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"}  `}
+                //(selecetedPerson.reduce((a,c)=>a||c.i ===val.i,false))
+
+                // ${radioValue === "single" && (selecetedPerson.find(a => a.i === val.i)) && open && "selected-place"}
+                // ${radioValue === "multiple" && (selecetedPerson.find(a => a.i === val.i)) && "selected-place"}
+                className={`seat
+                ${val.unchange && "walk-area"}
+                ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"} 
+                ${val.cls}
+                `}
               >
                 {val?.i}
+
               </div>
 
             })}
 
           </GridLayout >
         </div>
-        {open ? <div className='secondElement'>  < DrawerFn
-          setOpen={setOpen}
-          setCurrentLayout={setCurrentLayout}
-          currentLayout={currentLayout}
-          selecetedPerson={selecetedPerson}
-          setSelectedPerson={setSelectedPerson}
-          form={form}
-          show={displayStack}
-          setEnableUnOccupiedViews={setEnableUnOccupiedViews}
-          enableUnOccupiedViews={enableUnOccupiedViews}
-          setIsDeleteModalOpen={setIsDeleteModalOpen}
-          isSubmit={isSubmit}
-          setIsSubmit={setIsSubmit}
-          isVisible={isVisible}
-          setUnOccupiedPeople={setUnOccupiedPeople}
-          unOccupiedPeople={unOccupiedPeople}
-        /></div > : null}
+        {open ? <div className='secondElement'>
+          < DrawerFn
+            setOpen={setOpen}
+            setCurrentLayout={setCurrentLayout}
+            currentLayout={currentLayout}
+            selecetedPerson={selecetedPerson}
+            setSelectedPerson={setSelectedPerson}
+            form={form}
+            show={displayStack}
+            setEnableUnOccupiedViews={setEnableUnOccupiedViews}
+            enableUnOccupiedViews={enableUnOccupiedViews}
+            setIsDeleteModalOpen={setIsDeleteModalOpen}
+            isSubmit={isSubmit}
+            setIsSubmit={setIsSubmit}
+            isVisible={isVisible}
+            setUnOccupiedPeople={setUnOccupiedPeople}
+            unOccupiedPeople={unOccupiedPeople}
+            setSelectBoxGlow={setSelectBoxGlow}
+            selectBoxGlow={selectBoxGlow}
+          /></div > : null}
         {/* <Drawer title="UnOccupied Peoples" onClose={onVisibleClose} open={isVisible}>
           <Flex gap={4} wrap align="center">
             {currentLayout.filter(dev => dev.unOccupied && dev.devName).map((tag) => (
@@ -362,11 +399,11 @@ console.log('testttt')
 
         {/* </Flex> */}
       </Modal>
-      <Modal title="Save Alert" open={isCompleteModalOpen} onOk={()=>setIsCompleteModalOpen(false)} onCancel={()=>setIsCompleteModalOpen(false)} okText="Yes" okType="primary">
+      <Modal title="Save Alert" open={isCompleteModalOpen} onOk={() => setIsCompleteModalOpen(false)} onCancel={() => setIsCompleteModalOpen(false)} okText="Yes" okType="primary">
         <div>
           Are you sure you want to save the changes?
         </div>
-        <div className='my-2'>
+        {/* <div className='my-2'>
           {currentLayout.filter(dev => dev.cls === "selected-place" && dev.devName).map((tag) => (
             <Tag
               key={tag}
@@ -376,7 +413,7 @@ console.log('testttt')
               {tag.devName}
             </Tag>
           ))}
-        </div>
+        </div> */}
       </Modal>
       <Modal
         title="Change User"

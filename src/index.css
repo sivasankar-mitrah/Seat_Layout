@@ -25,12 +25,14 @@
 .walk-area {
   background-color: rgb(240 178 207) !important;
 }
+
 .selected-place {
   background-color: orange !important;
+
 }
 
 .dev-area {
-  background-color: lightGrey;
+  background-color: lightGrey !important;
 }
 
 .available-seats {
@@ -65,4 +67,45 @@
 .displayDetails {
   display: flex;
   flex-direction: column;
+}
+
+.unchange-cells {
+  background-color: #3636369f;
+  color: #ffffff;
+  cursor: not-allowed !important;
+}
+
+.empty-seat {
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid green;
+}
+
+.frontend {
+  background-color: #EFD81D !important;
+}
+
+.backend {
+  background-color: #002155 !important;
+  color: white;
+}
+
+.php {
+  background-color: #8C8ABB !important;
+}
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 0 0 #db0d0d;
+  }
+
+  50% {
+    box-shadow: 0 0 15px 0 #db0d0d;
+  }
+}
+
+.custom-box-glow {
+  border-color: #db0d0d68 !important;
+  background: linear-gradient(360deg, #f2171763 10%, #f2171735 50%, #f2171738 100%);
+  animation: glow 1.4s ease-out infinite;
 }
