@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import GridLayout from 'react-grid-layout';
-import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, message } from 'antd';
+import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, message, Badge, Switch } from 'antd';
 import { layouts } from './layouts';
 import DrawerFn from './SideSection';
 import { devList } from './devList';
@@ -8,6 +8,9 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNotification } from './common/notification';
+import { CheckOutlined, CloseOutlined, PhoneTwoTone } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPhone } from '@fortawesome/free-solid-svg-icons';
 
 
 const App = () => {
@@ -28,6 +31,9 @@ const App = () => {
   const [unOccupiedPeople, setUnOccupiedPeople] = useState([]);
   const api = useNotification();
   const [selectBoxGlow, setSelectBoxGlow] = useState({ seatName: "", selectStatus: true }); // Seat Glow while Selecting inputs
+  const [badgeContent, setBadgeContent] = useState(false); // Initial badge content
+  const [isIntercomVisible , setIsIntercomVisible] = useState(false)
+
 
 
 
@@ -147,6 +153,7 @@ const App = () => {
   };
 
   const handleSelectStack = (value) => {
+    setRadioValue('single')
     setSelectedPerson([])
     setselectedStack(value)
     const stackClasses = {
@@ -165,6 +172,7 @@ const App = () => {
       return { ...item, cls };
     });
     setCurrentLayout(updatedLayout.map(a => (a.seat_id === "") ? ({ ...a, cls: "seat empty-seat" }) : ({ ...a })));
+    setSelectBoxGlow({ seatName: "", selectStatus: true });
   };
 
   const handleDeleteModalOk = () => {
@@ -228,7 +236,11 @@ const App = () => {
   }
 
   const onChange = (e) => {
-    setRadioValue(e.target.value);
+    if(e){
+      setRadioValue('single')
+    } else {
+      setRadioValue('multiple')
+    }
   };
 
   const handleTagChange = (tag, checked) => {
@@ -242,6 +254,15 @@ const App = () => {
     setIsVisible(true);
     setOpen(true);
   }
+
+  const handleMouseEnter = (e) => {
+    setBadgeContent(true);
+  };
+
+  const handleMouseLeave = () => {
+    setBadgeContent(false);
+  };
+
 
   return (
     <Layout>
@@ -284,12 +305,28 @@ const App = () => {
             },
           ]}
         />
-        <Radio.Group onChange={onChange} value={radioValue}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <span style={{ marginRight: "8px", color: "white" }}>Show Intercom  <FontAwesomeIcon icon={faPhone} style={{ fontSize: "15px", color: "lightblue" }} />
+          </span>
+          <Switch
+            checkedChildren={<CheckOutlined />}
+            unCheckedChildren={<CloseOutlined />}
+            onClick={(e)=>setIsIntercomVisible(e)}
+          />
+        </div>
+        {/* <Radio.Group onChange={onChange} value={radioValue}>
           <Space direction="vertical">
             <Radio value={'single'}><div style={{ color: "white" }}>Single</div></Radio>
             <Radio value={'multiple'}><div style={{ color: "white" }}>Multiple</div></Radio>
           </Space>
-        </Radio.Group>
+        </Radio.Group> */}
+        <Switch
+            checkedChildren={"single"}
+            unCheckedChildren={"multiple"}
+            defaultChecked
+            onChange={onChange}
+            value={radioValue=== "single" ? true: false}
+          />
         {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary"
           onClick={onHandleSelect}>Selected </Button>}
         <Button type="primary" onClick={onHandleComplete}>Complete </Button>
@@ -315,6 +352,18 @@ const App = () => {
           >
 
             {currentLayout?.map((val, index) => {
+              let offset_X;
+              let offset_Y;
+              if (val?.h === 3) {
+                offset_X = 0
+                offset_Y = -45
+              } else if (val?.h === 2) {
+                offset_X = 0
+                offset_Y = -24
+              } else {
+                offset_X = 18
+                offset_Y = -4
+              }
               return <div
                 title={val?.devName}
                 onClick={() => { !val?.unchange && handleOpenSideSection(val); }}
@@ -341,10 +390,24 @@ const App = () => {
                 ${val.cls}
                 `}
               >
-                {val?.i}
+                {!val.unchange && val.extension_no && isIntercomVisible ?
+                  <Badge
+                    count={
+                      <div
+                        className="phone-icon-container"
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        {badgeContent ? val.extension_no : <PhoneTwoTone className="phone-icon" />}
+                      </div>
+                    }
+                    offset={[offset_X, offset_Y]} // Position adjustment
+                  >
+                    <span>{val.i} </span>
+                  </Badge>
+                  : val?.i}
 
               </div>
-
             })}
 
           </GridLayout >
@@ -368,6 +431,7 @@ const App = () => {
             unOccupiedPeople={unOccupiedPeople}
             setSelectBoxGlow={setSelectBoxGlow}
             selectBoxGlow={selectBoxGlow}
+            selectedStack={selectedStack}
           /></div > : null}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>

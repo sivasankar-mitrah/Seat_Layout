@@ -109,3 +109,28 @@
   background: linear-gradient(360deg, #f2171763 10%, #f2171735 50%, #f2171738 100%);
   animation: glow 1.4s ease-out infinite;
 }
+
+/* Circle Badge Container */
+.phone-icon-container {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px; /* Adjust size of the circle */
+  height: 20px;
+  border-radius: 50%; /* Circular border */
+  border: 2px solid #1890ff; /* Professional blue border */
+  background-color: #e6f7ff; /* Light blue-gray background */
+  transition: background-color 0.3s; /* Smooth background transition */
+}
+
+/* Phone Icon Style */
+.phone-icon {
+  font-size: 12px; /* Adjust icon size */
+  color: #1d39c4; /* Deep blue icon color */
+}
+
+/* Hover Effect */
+.phone-icon-container:hover {
+  background-color: #bae7ff; /* Darker blue background on hover */
+}
+

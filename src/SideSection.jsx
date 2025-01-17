@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Flex, Form, Modal, Select, Tag } from 'antd';
+import { Button, Flex, Form, Modal, Select, Table, Tag } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
 import { useNotification } from './common/notification';
@@ -23,7 +23,8 @@ export default function DrawerFn
         setUnOccupiedPeople,
         unOccupiedPeople,
         setSelectBoxGlow,      // setState of the glow box 
-        selectBoxGlow       //State if the glow box while slecting
+        selectBoxGlow,       //State if the glow box while slecting
+        selectedStack
     }) {
 
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
@@ -36,7 +37,9 @@ export default function DrawerFn
     const [placeForunOccupiedSeats, setPlaceForUnOccupiedSeats] = useState([])
     const [unOccupiedselectedSeat, setUnOccupiedselectedSeat] = useState("")
     const [readMore, setReadMore] = useState(true);
-    const [devoption, setDevoption] = useState([])
+    const [devoption, setDevoption] = useState([]);
+    const [isOccupiedModalOpen, setIsOccupiedModalOpen] = useState(false);
+    const [updateOccupiedLayout, setUpdateOccupiedLayout] = useState({});
     const api = useNotification();
 
     const values = form.getFieldValue();
@@ -126,14 +129,58 @@ export default function DrawerFn
         setUnOccupiedPeople(prev => prev.filter((value) => value.devId !== selectedTag.devId))
         const updatedCurrentLayout = currentLayout.map((value, index) => {
             if (index === seatIndex) {
-                return { ...value, cls: "seat", devName: selectedTag.devName, seat_id: value.i, role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
+                console.log("Value",value);
+                if(selectedStack !=="All" && selectedTag.stack === selectedStack) return { ...value, cls: selectedStack, devName: selectedTag.devName, seat_id: value.i, 
+                role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
+
+                else return { ...value, cls: "seat", devName: selectedTag.devName, seat_id: value.i, 
+                role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
             }
             return value
         })
+
+        
         form.setFieldsValue({ UnOccupiedSeats: null });
         setSelectBoxGlow({ seatName: "", selectStatus: true });
         setCurrentLayout(updatedCurrentLayout);
     }
+    const handleOccupiedOk = () => {
+        setCurrentLayout(updateOccupiedLayout.updatedLayout);
+        setUnOccupiedPeople(updateOccupiedLayout.updatedUnOccupiedPeople);
+    }
+
+    const handleOccupiedCancel = () => {
+        setIsOccupiedModalOpen(false)
+    }
+
+    const handleRandomOrder = () => {
+        setIsOccupiedModalOpen(true)
+        let updatedLayout = [...currentLayout];
+        let randomObj = []
+        let updatedUnOccupiedPeople = [...unOccupiedPeople].sort(() => Math.random() - 0.5);
+        updatedLayout = updatedLayout.map((value) => {
+            if (value.seat_id === "" && !value.emptyArea && updatedUnOccupiedPeople.length > 0) {
+                const randomValue = updatedUnOccupiedPeople.pop();
+                randomObj.push({ seat_id: value.i, devName: randomValue.devName, stack: randomValue.stack, x: <><div className='text-danger fs-5 fw-bold'>x</div></> })
+                return {
+                    ...value,
+                    cls: "seat",
+                    devName: randomValue.devName,
+                    seat_id: value.i,
+                    role: randomValue.role,
+                    stack: randomValue.stack,
+                    isFresher: randomValue.isFresher,
+                    devId: randomValue.devId,
+                    TL_id: randomValue.TL_id
+                };
+            }
+            return value;
+        });
+        setUpdateOccupiedLayout({ updatedLayout, updatedUnOccupiedPeople, randomObj })
+        // setCurrentLayout(updatedLayout);
+        // setUnOccupiedPeople(updatedUnOccupiedPeople);
+    };
+    
 
     const handleConfirmSwap = () => {
         setIsModalOpen(true);
@@ -155,75 +202,118 @@ export default function DrawerFn
         let exitingEmployeePositionIdx = values.newEmployee.split(' - ')[1]
         const newEmployeePosition = tempData.findIndex(emp => emp.i === values?.currentEmployee);
         const exitingEmployeePosition = tempData.findIndex(emp => emp.i === exitingEmployeePositionIdx);
-
         let { devName, role, stack, devId } = tempData[newEmployeePosition];
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
-
         const handleUpdatedDataCheck = (data) => data.replace("selected-place", "")
-
         const updatedData = tempData.map((item, index) => {
-            if (tempData[exitingEmployeePosition].seat_id === "") {
-                if (index === newEmployeePosition) return {
-                    ...item,
-                    cls: handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls),
-                    devName: currentLayout[exitingEmployeePosition]?.devName,
-                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
-                    role: currentLayout[exitingEmployeePosition]?.role,
-                    stack: currentLayout[exitingEmployeePosition]?.stack,
-                    devId: currentLayout[exitingEmployeePosition]?.devId,
-                    isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
-                    TL_id: currentLayout[exitingEmployeePosition]?.TL_id
-                }
-                else if (index === exitingEmployeePosition) return {
-                    ...item,
-                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
-                    devName: currentLayout[newEmployeePosition]?.devName,
-                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
-                    role: currentLayout[newEmployeePosition]?.role,
-                    stack: currentLayout[newEmployeePosition]?.stack,
-                    devId: currentLayout[newEmployeePosition]?.devId,
-                    isFresher: currentLayout[newEmployeePosition]?.isFresher,
-                    TL_id: currentLayout[newEmployeePosition]?.TL_id
-                }
-                else return item
-            }
-            else if (tempData[newEmployeePosition].seat_id === "") {
-                if (index === exitingEmployeePosition) return {
-                    ...item,
-                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
-                    devName: currentLayout[newEmployeePosition]?.devName,
-                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
-                    role: currentLayout[newEmployeePosition]?.role,
-                    stack: currentLayout[newEmployeePosition]?.stack,
-                    devId: currentLayout[newEmployeePosition]?.devId,
-                    isFresher: currentLayout[newEmployeePosition]?.isFresher,
-                    TL_id: currentLayout[newEmployeePosition]?.TL_id
-                }
-                else if (index === newEmployeePosition) return {
-                    ...item,
-                    cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
-                    devName: currentLayout[exitingEmployeePosition]?.devName,
-                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
-                    role: currentLayout[exitingEmployeePosition]?.role,
-                    stack: currentLayout[exitingEmployeePosition]?.stack,
-                    devId: currentLayout[exitingEmployeePosition]?.devId,
-                    isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
-                    TL_id: currentLayout[exitingEmployeePosition]?.TL_id
-                }
-                else return item
-            }
-
+        if (tempData[exitingEmployeePosition].seat_id === "") {
+        if (index === newEmployeePosition) return {
+        ...item,
+        cls: handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls),
+        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+        }
+        else if (index === exitingEmployeePosition) return {
+        ...item,
+        cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+        devName: currentLayout[newEmployeePosition]?.devName,
+        seat_id: currentLayout[newEmployeePosition]?.seat_id,
+        role: currentLayout[newEmployeePosition]?.role,
+        stack: currentLayout[newEmployeePosition]?.stack,
+        devId: currentLayout[newEmployeePosition]?.devId,
+        isFresher: currentLayout[newEmployeePosition]?.isFresher,
+        TL_id: currentLayout[newEmployeePosition]?.TL_id
+        }
+        else return item
+        }
+        else if (tempData[newEmployeePosition].seat_id === "") {
+        if (index === exitingEmployeePosition) return {
+        ...item,
+        cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+        }
+        else if (index === newEmployeePosition) return {
+        ...item,
+        cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
+        devName: currentLayout[exitingEmployeePosition]?.devName,
+        seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+        role: currentLayout[exitingEmployeePosition]?.role,
+        stack: currentLayout[exitingEmployeePosition]?.stack,
+        devId: currentLayout[exitingEmployeePosition]?.devId,
+        isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+        TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+        }
+        else return item
+        }
+        
+        else {
+        if (index === exitingEmployeePosition) {
+        return {
+        ...item,
+        cls: "empty-seat",
+        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+        }
+        }
+        else if (index === newEmployeePosition) {
+        setUnOccupiedPeople((prev) => [...prev,
+        { TL_id: item.TL_id, devId: item.devId, devName: item.devName, isFresher: item.isFresher, role: item.role,
+        seat_id: item.seat_id, stack: item.stack }])
+        // console.log("unOccupiedPeople", unOccupiedPeople);
+        // console.log("to be push", item);
+        return {
+        ...item,
+        cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
+        devName: currentLayout[exitingEmployeePosition]?.devName,
+        seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+        role: currentLayout[exitingEmployeePosition]?.role,
+        stack: currentLayout[exitingEmployeePosition]?.stack,
+        devId: currentLayout[exitingEmployeePosition]?.devId,
+        isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+        TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+        }
+        }
+        else return item;
+        }
         })
         setOpen(false)
-        setCurrentLayout([...updatedData]);
+        setCurrentLayout(updatedData.map(item => (selectedStack !== "All" && item.stack === selectedStack) ? {
+        ...item, cls: item.stack } : item));
         setEnableUnOccupiedViews([unoccupiedMemberData])
         setSelectedPerson([]);
-    };
+        };
 
     const handlePlaceChange = () => {
 
         setIsDeleteModalOpen(true)
     }
+
+    const columns = [
+        {
+            title: 'Empty Seats',
+            dataIndex: 'seat_id',
+        },
+        {
+            title: "Developer's Name",
+            dataIndex: 'devName',
+        },
+        {
+            title: "Developer's Stack",
+            dataIndex: 'stack',
+
+            render: (tagvalue) => (
+                <Tag key={tagvalue} className={
+                    tagvalue === 'frontend' ? 'react-bg ' :
+                        tagvalue === 'php' ? 'php-bg ' :
+                            tagvalue === 'backend' ? 'cf-bg ' : ""
+                }>
+                    {tagvalue.toUpperCase()}
+                </Tag>
+            ),
+        },
+        {
+            title: "Remove",
+            dataIndex: 'x',
+        },
+    ];
 
     const handleSwapChange = () => {
         if (selecetedPerson[0]?.i && selectedCurrentEmployee?.i) {
@@ -375,7 +465,7 @@ export default function DrawerFn
                                 {readMore ? "Read More" : "Read Less"}
                             </Button>
                         </Flex>
-                        <Button color="danger" variant="solid" className='mt-3'>
+                        <Button color="danger" className='mt-3' onClick={handleRandomOrder} variant="solid">
                             Random Order
                         </Button>
                     </Form.Item>
@@ -423,6 +513,16 @@ export default function DrawerFn
                 <div>
                     Are you sure you want to Swap the User?
                 </div>
+            </Modal>
+            <Modal
+                title="Here is a Random Seatings"
+                okText="Yes"
+                okType="primary"
+                className='mh-75'
+                open={isOccupiedModalOpen} onOk={handleOccupiedOk} onCancel={handleOccupiedCancel}
+            >
+                {updateOccupiedLayout?.randomObj?.length ? <Table columns={columns} pagination={{pageSize: 7}} dataSource={updateOccupiedLayout?.randomObj} /> : "No Empty Seats"}
+
             </Modal>
         </div>
     )
