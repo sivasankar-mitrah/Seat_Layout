@@ -32,8 +32,9 @@ const App = () => {
   const api = useNotification();
   const [selectBoxGlow, setSelectBoxGlow] = useState({ seatName: "", selectStatus: true }); // Seat Glow while Selecting inputs
   const [badgeContent, setBadgeContent] = useState(false); // Initial badge content
-  const [isIntercomVisible , setIsIntercomVisible] = useState(false)
-
+  const [isIntercomVisible, setIsIntercomVisible] = useState(false);
+  const [isTLlist, setIsTLlist] = useState([]);
+  const [selectedTL, setselectedTL] = useState(null);
 
 
 
@@ -52,37 +53,39 @@ const App = () => {
     const remainingDevs = devList.filter((dev) => !dev.seat_id);
     setUnOccupiedPeople(remainingDevs);
     setCurrentLayout(combinedArr)
+    // setCurrentLayout(localStorage.getItem("seatLayout") ? JSON.parse(localStorage.getItem("seatLayout")) :combinedArr)
     setSelectedPerson([]);
   }, [])
 
   useEffect(() => {
     setOpen(currentLayout.some(item => item.cls.includes("selected-place")));
+    const tllist = currentLayout.filter(item => item.devId && item.devId === item.TL_id).map((item) => ({ value: item.TL_id, label: item.devName }))
+    setIsTLlist(tllist)
   }, [currentLayout])
 
+  useEffect(() => {
+    if (!open) setSelectBoxGlow({ seatName: "", selectStatus: true });
+  }, [open])
 
   useEffect(() => {
     const value = selecetedPerson?.[0];
     if (radioValue === 'single' && value) {
-      let combinedArr = layouts.layout1.map(item1 => {
-        let item2 = devList.find(item => item.i === item1.i);
-        return { ...item1, ...item2 };
-      });
-      let data = combinedArr.map((item) => {
-        if (item?.i === value?.i) {
-          return { ...item, cls: `${item.cls} selected-place` }
-        }
-        else if ((item?.unOccupied && (item.role === "developer"))) {
-          return { ...item, cls: `${item.cls} available-seats` }
-        } else {
-          return { ...item }
-        }
-      })
       setSelectedPerson([value])
       setCurrentLayout(currentLayout.map(a => {
         if (a.i === value.i) return { ...a, cls: "seat selected-place" }
         else return (a.seat_id === "") ? { ...a, cls: "seat empty-seat" } : { ...a, cls: "seat" }
       }))
       setselectedStack("All");
+    }
+
+    if (radioValue === "single" && selecetedPerson.length !== 0) {
+      form.setFieldsValue({ newEmployee: `${selecetedPerson[0]?.devName} - ${selecetedPerson[0]?.i}` });
+      setDisplayStack([selecetedPerson[0]]);
+    }
+    else if(radioValue === "multiple" && selecetedPerson.length!==0 )
+    {
+      setSelectedPerson((prev)=>prev.filter(item=>item.seat_id!==""));
+      setCurrentLayout((prev)=>prev.map(item=>(item.seat_id === "")? {...item,cls:`empty-seat`}: item))
     }
 
   }, [radioValue])
@@ -149,10 +152,28 @@ const App = () => {
       else return item;
     })
     setCurrentLayout(finalUpdatedLayout);
+    setselectedTL(null);
     // setCurrentLayout(updatedLayout);
   };
 
+  const handleSelectTL = (value) => {
+    const updated = currentLayout.map((item) => {
+      if (value === item.devId) {
+        return {...item, cls:"custom-box-glow-tl"}
+      } else if (value === item.TL_id) {
+        return {...item, cls:"tl-group-color"}
+      } else {
+        return (item.seat_id === "") ? ({ ...item, cls: "seat empty-seat" }) : ({ ...item, cls: "seat" })
+      }
+    })
+    setselectedStack("All")
+    setselectedTL(value)
+    setCurrentLayout(updated)
+  }
+
+
   const handleSelectStack = (value) => {
+    setselectedTL(null);
     setRadioValue('single')
     setSelectedPerson([])
     setselectedStack(value)
@@ -185,9 +206,6 @@ const App = () => {
     setIsDeleteModalOpen(false)
   }
 
-  const onHandleSelect = () => {
-    setIsModalOpen(true);
-  }
 
   const onHandleComplete = () => {
     setIsCompleteModalOpen(true);
@@ -236,7 +254,7 @@ const App = () => {
   }
 
   const onChange = (e) => {
-    if(e){
+    if (e) {
       setRadioValue('single')
     } else {
       setRadioValue('multiple')
@@ -251,6 +269,7 @@ const App = () => {
   }
 
   const handleUnoccupiedPeople = () => {
+    setselectedTL(null);
     setIsVisible(true);
     setOpen(true);
   }
@@ -262,6 +281,11 @@ const App = () => {
   const handleMouseLeave = () => {
     setBadgeContent(false);
   };
+
+  const handleComplete = () => {
+    localStorage.setItem("seatLayout" , JSON.stringify(currentLayout))
+    setIsCompleteModalOpen(false)
+}
 
 
   return (
@@ -305,30 +329,36 @@ const App = () => {
             },
           ]}
         />
+        <Select
+          style={{
+            width: 150,
+          }}
+          className='ms-2'
+          onChange={handleSelectTL}
+          showSearch
+          optionFilterProp="label"
+          placeholder="Select TeamLeader"
+          value={selectedTL}
+          options={isTLlist}
+        />
         <div style={{ display: "flex", alignItems: "center" }}>
           <span style={{ marginRight: "8px", color: "white" }}>Show Intercom  <FontAwesomeIcon icon={faPhone} style={{ fontSize: "15px", color: "lightblue" }} />
           </span>
           <Switch
             checkedChildren={<CheckOutlined />}
             unCheckedChildren={<CloseOutlined />}
-            onClick={(e)=>setIsIntercomVisible(e)}
+            onClick={(e) => setIsIntercomVisible(e)}
           />
         </div>
-        {/* <Radio.Group onChange={onChange} value={radioValue}>
-          <Space direction="vertical">
-            <Radio value={'single'}><div style={{ color: "white" }}>Single</div></Radio>
-            <Radio value={'multiple'}><div style={{ color: "white" }}>Multiple</div></Radio>
-          </Space>
-        </Radio.Group> */}
         <Switch
-            checkedChildren={"single"}
-            unCheckedChildren={"multiple"}
-            defaultChecked
-            onChange={onChange}
-            value={radioValue=== "single" ? true: false}
-          />
-        {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary"
-          onClick={onHandleSelect}>Selected </Button>}
+          style={(radioValue === "multiple")? {backgroundColor:"#1677ff",fontWeight:"bold"}:{fontWeight:"bold"}}
+          checkedChildren={"single"}
+          unCheckedChildren={"multiple"}
+          defaultChecked
+          onChange={onChange} 
+          value={radioValue === "single"}
+        />
+        
         <Button type="primary" onClick={onHandleComplete}>Complete </Button>
         <Button type="primary" onClick={handleUnoccupiedPeople} >UnOccupied Peoples </Button>
 
@@ -343,7 +373,6 @@ const App = () => {
           <GridLayout
             className="layout"
             rowHeight={30}
-            // margin={[10, 30]}
             width={4000}
             isDraggable={false}
             isResizable={false}
@@ -365,9 +394,10 @@ const App = () => {
                 offset_Y = -4
               }
               return <div
+
                 title={val?.devName}
-                onClick={() => { !val?.unchange && handleOpenSideSection(val); }}
-                style={{ cursor: 'pointer' }}
+                onClick={() => { !val?.unchange && !(radioValue === "multiple" && val?.seat_id === "") && handleOpenSideSection(val); }}  ///modified
+                style={((radioValue === "multiple" && val?.seat_id === "") || val?.unchange) ? { cursor: "not-allowed" } : { cursor: 'pointer' }}  ///modified
                 data-grid={{ x: val.x, y: val.y, w: val.w, h: val.h, }}
                 key={val?.i}
 
@@ -386,7 +416,7 @@ const App = () => {
                 // ${radioValue === "multiple" && (selecetedPerson.find(a => a.i === val.i)) && "selected-place"}
                 className={`seat
                 ${val.unchange && "walk-area"}
-                ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"} 
+                ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus ) && "custom-box-glow"} 
                 ${val.cls}
                 `}
               >
@@ -403,7 +433,7 @@ const App = () => {
                     }
                     offset={[offset_X, offset_Y]} // Position adjustment
                   >
-                    <span>{val.i} </span>
+                    <span style={(isIntercomVisible && selectedStack === "backend" && !val?.cls.includes("selected-seat") && val?.stack === "backend") ? { color: "white" } : {}}>{val.i} </span>
                   </Badge>
                   : val?.i}
 
@@ -432,6 +462,8 @@ const App = () => {
             setSelectBoxGlow={setSelectBoxGlow}
             selectBoxGlow={selectBoxGlow}
             selectedStack={selectedStack}
+            radioValue={radioValue}  ///modified
+            removeEmployee ={setIsModalOpen} ///modified
           /></div > : null}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
@@ -453,7 +485,7 @@ const App = () => {
           Remove
         </Button>
       </Modal>
-      <Modal title="Save Alert" open={isCompleteModalOpen} onOk={() => setIsCompleteModalOpen(false)} onCancel={() => setIsCompleteModalOpen(false)} okText="Yes" okType="primary">
+      <Modal title="Save Alert" open={isCompleteModalOpen} onOk={handleComplete} onCancel={() => setIsCompleteModalOpen(false)} okText="Yes" okType="primary">
         <div>
           Are you sure you want to save the changes?
         </div>

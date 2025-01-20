@@ -8,7 +8,7 @@ export const layouts = {
    
     { i: 'G1', x: 10, y: 13, w: 1, h: 11, emptyArea: true, gate: true, unchange: true },
     { i: 'G2', x: 0, y: 17, w: 0.5, h: 2, emptyArea: true, unchange: true },
-    // { i: 'B', x: 11, y: 13, w: 15, h: 9, emptyArea: true, building: true },
+    { i: 'Empty Area', x: 11, y: 13, w: 15, h: 18, emptyArea: true ,unchange: true},
     { i: 'HR-G', x: 23, y: 3, w: 3, h: 4, emptyArea: true, unchange: true },
    
     { i: 'E1', x: 3, y: 1, w: 1, h: 5, emptyArea: true, unchange: true },

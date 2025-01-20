@@ -57,7 +57,7 @@ function Profile({ values, show, currentLayout, setCurrentLayout, setUnOccupiedP
                     <Avatar shape="square" size={60} icon={<UserOutlined />} />
                     <div className='displayDetails'>
                         <p>{values.newEmployee}</p>
-                        <p>{show[0]?.stack}</p>
+                        <p>{show && show[0]?.stack}</p>
                     </div>
                 </div>
                 {/* Call handleRemove on click */}

@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button, Flex, Form, Modal, Select, Table, Tag } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
 import { useNotification } from './common/notification';
-
+import { CloseOutlined } from '@ant-design/icons';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 export default function DrawerFn
     ({
@@ -24,7 +26,9 @@ export default function DrawerFn
         unOccupiedPeople,
         setSelectBoxGlow,      // setState of the glow box 
         selectBoxGlow,       //State if the glow box while slecting
-        selectedStack
+        selectedStack,
+        radioValue,
+        removeEmployee
     }) {
 
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
@@ -129,17 +133,20 @@ export default function DrawerFn
         setUnOccupiedPeople(prev => prev.filter((value) => value.devId !== selectedTag.devId))
         const updatedCurrentLayout = currentLayout.map((value, index) => {
             if (index === seatIndex) {
-                console.log("Value",value);
-                if(selectedStack !=="All" && selectedTag.stack === selectedStack) return { ...value, cls: selectedStack, devName: selectedTag.devName, seat_id: value.i, 
-                role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
+                if (selectedStack !== "All" && selectedTag.stack === selectedStack) return {
+                    ...value, cls: selectedStack, devName: selectedTag.devName, seat_id: value.i,
+                    role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id
+                }
 
-                else return { ...value, cls: "seat", devName: selectedTag.devName, seat_id: value.i, 
-                role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id }
+                else return {
+                    ...value, cls: "seat", devName: selectedTag.devName, seat_id: value.i,
+                    role: selectedTag.role, stack: selectedTag.stack, isFresher: selectedTag.isFresher, devId: selectedTag.devId, TL_id: selectedTag.TL_id
+                }
             }
             return value
         })
 
-        
+
         form.setFieldsValue({ UnOccupiedSeats: null });
         setSelectBoxGlow({ seatName: "", selectStatus: true });
         setCurrentLayout(updatedCurrentLayout);
@@ -147,21 +154,42 @@ export default function DrawerFn
     const handleOccupiedOk = () => {
         setCurrentLayout(updateOccupiedLayout.updatedLayout);
         setUnOccupiedPeople(updateOccupiedLayout.updatedUnOccupiedPeople);
+        setIsOccupiedModalOpen(false)
     }
 
     const handleOccupiedCancel = () => {
         setIsOccupiedModalOpen(false)
     }
 
-    const handleRandomOrder = () => {
-        setIsOccupiedModalOpen(true)
+    const handleRandomOrder = (isSideSection = true) => {
+        isSideSection && setIsOccupiedModalOpen(true);
         let updatedLayout = [...currentLayout];
-        let randomObj = []
-        let updatedUnOccupiedPeople = [...unOccupiedPeople].sort(() => Math.random() - 0.5);
+        let updatedUnOccupiedPeoples = unOccupiedPeople
+        if (!isSideSection) {
+            updatedUnOccupiedPeoples = updateOccupiedLayout.randomObj
+        }
+        let updatedUnOccupiedPeople = [...updatedUnOccupiedPeoples].sort(() => Math.random() - 0.5);
+        let randomObj = [];
         updatedLayout = updatedLayout.map((value) => {
             if (value.seat_id === "" && !value.emptyArea && updatedUnOccupiedPeople.length > 0) {
                 const randomValue = updatedUnOccupiedPeople.pop();
-                randomObj.push({ seat_id: value.i, devName: randomValue.devName, stack: randomValue.stack, x: <><div className='text-danger fs-5 fw-bold'>x</div></> })
+                randomObj.push(
+                    {
+                        seat_id: value.i,
+                        devName: randomValue.devName,
+                        stack: randomValue.stack,
+                        isFresher: randomValue.isFresher,
+                        devId: randomValue.devId,
+                        TL_id: randomValue.TL_id,
+                        role: randomValue.role,
+                        x: <div
+                            className='text-danger fs-5 fw-bold'
+                            onClick={() => handleRemoveRandomSeat(value.i)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            x
+                        </div>
+                    });
                 return {
                     ...value,
                     cls: "seat",
@@ -176,11 +204,29 @@ export default function DrawerFn
             }
             return value;
         });
-        setUpdateOccupiedLayout({ updatedLayout, updatedUnOccupiedPeople, randomObj })
-        // setCurrentLayout(updatedLayout);
-        // setUnOccupiedPeople(updatedUnOccupiedPeople);
+        setUpdateOccupiedLayout({ updatedLayout, updatedUnOccupiedPeople, randomObj });
     };
-    
+    const handleRemoveRandomSeat = (seatId) => {
+        setUpdateOccupiedLayout((prev) => {
+            const filteredRandomObj = prev.randomObj.filter(item => item.seat_id !== seatId);
+            const revertedPerson = prev.randomObj.find(item => item.seat_id === seatId);
+            const updatedUnOccupiedPeople = [...prev.updatedUnOccupiedPeople, revertedPerson];
+
+            const revertedLayout = prev.updatedLayout.map(item => {
+                if (item.seat_id === seatId) {
+                    return { ...item, seat_id: "", devName: "", devId: "", stack: "", cls: "empty-seat" };
+                }
+                return item;
+            });
+
+            return {
+                updatedLayout: revertedLayout,
+                updatedUnOccupiedPeople: updatedUnOccupiedPeople,
+                randomObj: filteredRandomObj
+            };
+        });
+    };
+
 
     const handleConfirmSwap = () => {
         setIsModalOpen(true);
@@ -206,80 +252,82 @@ export default function DrawerFn
         let unoccupiedMemberData = { devName, role, stack, value: devId, label: devName };
         const handleUpdatedDataCheck = (data) => data.replace("selected-place", "")
         const updatedData = tempData.map((item, index) => {
-        if (tempData[exitingEmployeePosition].seat_id === "") {
-        if (index === newEmployeePosition) return {
-        ...item,
-        cls: handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls),
-        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
-        }
-        else if (index === exitingEmployeePosition) return {
-        ...item,
-        cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
-        devName: currentLayout[newEmployeePosition]?.devName,
-        seat_id: currentLayout[newEmployeePosition]?.seat_id,
-        role: currentLayout[newEmployeePosition]?.role,
-        stack: currentLayout[newEmployeePosition]?.stack,
-        devId: currentLayout[newEmployeePosition]?.devId,
-        isFresher: currentLayout[newEmployeePosition]?.isFresher,
-        TL_id: currentLayout[newEmployeePosition]?.TL_id
-        }
-        else return item
-        }
-        else if (tempData[newEmployeePosition].seat_id === "") {
-        if (index === exitingEmployeePosition) return {
-        ...item,
-        cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
-        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
-        }
-        else if (index === newEmployeePosition) return {
-        ...item,
-        cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
-        devName: currentLayout[exitingEmployeePosition]?.devName,
-        seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
-        role: currentLayout[exitingEmployeePosition]?.role,
-        stack: currentLayout[exitingEmployeePosition]?.stack,
-        devId: currentLayout[exitingEmployeePosition]?.devId,
-        isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
-        TL_id: currentLayout[exitingEmployeePosition]?.TL_id
-        }
-        else return item
-        }
-        
-        else {
-        if (index === exitingEmployeePosition) {
-        return {
-        ...item,
-        cls: "empty-seat",
-        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
-        }
-        }
-        else if (index === newEmployeePosition) {
-        setUnOccupiedPeople((prev) => [...prev,
-        { TL_id: item.TL_id, devId: item.devId, devName: item.devName, isFresher: item.isFresher, role: item.role,
-        seat_id: item.seat_id, stack: item.stack }])
-        // console.log("unOccupiedPeople", unOccupiedPeople);
-        // console.log("to be push", item);
-        return {
-        ...item,
-        cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
-        devName: currentLayout[exitingEmployeePosition]?.devName,
-        seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
-        role: currentLayout[exitingEmployeePosition]?.role,
-        stack: currentLayout[exitingEmployeePosition]?.stack,
-        devId: currentLayout[exitingEmployeePosition]?.devId,
-        isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
-        TL_id: currentLayout[exitingEmployeePosition]?.TL_id
-        }
-        }
-        else return item;
-        }
+            if (tempData[exitingEmployeePosition].seat_id === "") {
+                if (index === newEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls),
+                    devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+                }
+                else if (index === exitingEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+                    devName: currentLayout[newEmployeePosition]?.devName,
+                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
+                    role: currentLayout[newEmployeePosition]?.role,
+                    stack: currentLayout[newEmployeePosition]?.stack,
+                    devId: currentLayout[newEmployeePosition]?.devId,
+                    isFresher: currentLayout[newEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[newEmployeePosition]?.TL_id
+                }
+                else return item
+            }
+            else if (tempData[newEmployeePosition].seat_id === "") {
+                if (index === exitingEmployeePosition) return {
+                    ...item,
+                    cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
+                    devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+                }
+                else if (index === newEmployeePosition) return {
+                    ...item,
+                    cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
+                    devName: currentLayout[exitingEmployeePosition]?.devName,
+                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+                    role: currentLayout[exitingEmployeePosition]?.role,
+                    stack: currentLayout[exitingEmployeePosition]?.stack,
+                    devId: currentLayout[exitingEmployeePosition]?.devId,
+                    isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+                    TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+                }
+                else return item
+            }
+
+            else {
+                if (index === exitingEmployeePosition) {
+                    return {
+                        ...item,
+                        cls: "empty-seat",
+                        devName: "", seat_id: "", role: "", stack: "", devId: "", isFresher: "", TL_id: ""
+                    }
+                }
+                else if (index === newEmployeePosition) {
+                    setUnOccupiedPeople((prev) => [...prev,
+                    {
+                        TL_id: item.TL_id, devId: item.devId, devName: item.devName, isFresher: item.isFresher, role: item.role,
+                        seat_id: item.seat_id, stack: item.stack
+                    }]);
+
+                    return {
+                        ...item,
+                        cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
+                        devName: currentLayout[exitingEmployeePosition]?.devName,
+                        seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+                        role: currentLayout[exitingEmployeePosition]?.role,
+                        stack: currentLayout[exitingEmployeePosition]?.stack,
+                        devId: currentLayout[exitingEmployeePosition]?.devId,
+                        isFresher: currentLayout[exitingEmployeePosition]?.isFresher,
+                        TL_id: currentLayout[exitingEmployeePosition]?.TL_id
+                    }
+                }
+                else return item;
+            }
         })
         setOpen(false)
         setCurrentLayout(updatedData.map(item => (selectedStack !== "All" && item.stack === selectedStack) ? {
-        ...item, cls: item.stack } : item));
+            ...item, cls: item.stack
+        } : item));
         setEnableUnOccupiedViews([unoccupiedMemberData])
         setSelectedPerson([]);
-        };
+    };
 
     const handlePlaceChange = () => {
 
@@ -374,156 +422,375 @@ export default function DrawerFn
         setReadMore(true);
     };
 
+    const handleMultipleStageColorTag = (data) => (["frontend", "php", "backend"].some(stack => stack.includes(data.stack))) && `${data.stack}`;//
+    const handleMultipleDrawerUncheck = (data) => {
+        const handleColorReplace = (data) => data.cls.replace("selected-place", "")
 
+        setSelectedPerson((prev) => prev.filter(({ seat_id }) => seat_id !== data.seat_id))
+
+        if (selectedStack !== "All" && data.stack === selectedStack) setCurrentLayout((prev) => prev.map((item) => (item.seat_id === data.seat_id) ? { ...item, cls: `${handleColorReplace(item)} ${selectedStack}` } : item))
+        else setCurrentLayout((prev) => prev.map((item) => (item.seat_id === data.seat_id) ? { ...item, cls: `${handleColorReplace(item)} ` } : item))
+    }
+
+
+    const moveRow = (dragKey, hoverKey, isDrop) => {
+        if (dragKey === hoverKey) return; // No-op if keys are the same
+
+        if (!isDrop) {
+            return; // Handle hover without state update
+        }
+
+        setUpdateOccupiedLayout((prevLayout) => {
+            const updatedRandomObj = [...prevLayout.randomObj];
+
+            // Find indices using unique keys
+            const draggedIndex = updatedRandomObj.findIndex(
+                (item) => item.seat_id === dragKey
+            );
+            const hoveredIndex = updatedRandomObj.findIndex(
+                (item) => item.seat_id === hoverKey
+            );
+
+            if (draggedIndex === -1 || hoveredIndex === -1) return prevLayout; // Safety check
+
+            // Rearrange the array
+            // const [draggedRow] = updatedRandomObj.splice(draggedIndex, 1);
+            // updatedRandomObj.splice(hoveredIndex, 0, draggedRow);
+
+            let selected = updatedRandomObj[draggedIndex].seat_id 
+            let hovered = updatedRandomObj[hoveredIndex].seat_id
+
+            const swapDataExceptSeatId = (updatedRandomObj, draggedIndex, hoveredIndex) => {
+                const draggedItem = { ...updatedRandomObj[draggedIndex] };
+                const hoveredItem = { ...updatedRandomObj[hoveredIndex] }; 
+            
+                const keysToSwap = Object.keys(draggedItem).filter((key) => key !== 'seat_id' && key !== 'x');
+            
+                keysToSwap.forEach((key) => {
+                    const temp = draggedItem[key];
+                    draggedItem[key] = hoveredItem[key];
+                    hoveredItem[key] = temp;
+                });
+            
+                updatedRandomObj[draggedIndex] = draggedItem;
+                updatedRandomObj[hoveredIndex] = hoveredItem;
+            
+                return updatedRandomObj;
+            };
+
+            const swapSeatData = (updatedSeatLayout, selectedKey, hoveredKey) => {
+                // Clone the array to avoid mutating the original state
+                const updatedLayout = [...updatedSeatLayout];
+            
+                // Find the indices of the selected and hovered keys
+                const selectedIndex = updatedLayout.findIndex(item => item.seat_id === selectedKey);
+                const hoveredIndex = updatedLayout.findIndex(item => item.seat_id === hoveredKey);
+            
+                if (selectedIndex === -1 || hoveredIndex === -1) {
+                    return updatedLayout;
+                }
+            
+                // Extract the selected and hovered items
+                const selectedItem = { ...updatedLayout[selectedIndex] };
+                const hoveredItem = { ...updatedLayout[hoveredIndex] };
+            
+                // List of properties to swap
+                const keysToSwap = ["devName","role", "stack", "devId", "isFresher", "TL_id"];
+            
+                // Swap the values of the properties
+                keysToSwap.forEach(key => {
+                    const temp = selectedItem[key];
+                    selectedItem[key] = hoveredItem[key];
+                    hoveredItem[key] = temp;
+                });
+            
+                // Update the array with the swapped items
+                updatedLayout[selectedIndex] = selectedItem;
+                updatedLayout[hoveredIndex] = hoveredItem;
+            
+                return updatedLayout;
+            };
+            
+
+            let updatedrandomObj = swapDataExceptSeatId(updatedRandomObj, draggedIndex, hoveredIndex)
+
+            let updatedSeatLayout = [...prevLayout.updatedLayout] 
+
+            let updatedSeat = swapSeatData(updatedSeatLayout,selected,hovered)
+
+            return {
+                ...prevLayout,
+                updatedLayout: updatedSeat,
+                randomObj: updatedrandomObj,
+            };
+        });
+    };
+
+    const DraggableBodyRow = ({ moveRow, className, style, index, ...restProps }) => {
+        const ref = useRef();
+    
+        const [, drop] = useDrop({
+            accept: "row",
+            hover: (item) => {
+                if (!ref.current) return;
+            
+                const dragKey = item.dataRowKey; // Key of the dragged row (original value)
+            
+                const hoverKey = restProps["data-row-key"]; // Key of the currently hovered row
+            
+                if (dragKey === hoverKey) return; // Avoid unnecessary actions
+            
+                // Trigger row movement logic but do not modify item.dataRowKey
+                moveRow(dragKey, hoverKey, false); // False indicates it's not a drop yet
+            },
+            drop: (item) => {
+                if (!ref.current) return;
+    
+                const dragKey = item.dataRowKey; // Final key of the dragged row
+                const hoverKey = restProps["data-row-key"]; // Final key of the dropped row
+    
+                moveRow(dragKey, hoverKey, true); // Update state on drop
+            },
+        });
+    
+        const [{ isDragging }, drag] = useDrag({
+            type: "row",
+            item: { dataRowKey: restProps["data-row-key"], index }, // Attach unique key and index
+            collect: (monitor) => ({
+                isDragging: monitor.isDragging(),
+            }),
+        });
+    
+        drag(drop(ref));
+    
+        return (
+            <tr
+                ref={ref}
+                style={{ ...style, opacity: isDragging ? 0 : 1 }}
+                className={className}
+                {...restProps}
+            />
+        );
+    };
+    
 
     return (
-        <div>
-            <Form
-                form={form}
-                name="basic"
-                onFinish={onFinish}
-                autoComplete="off"
-                style={{ position: "fixed" }}
-            >
-                {!isVisible ? <><Form.Item
-                    label={(selecetedPerson[0]?.seat_id) ? "Employee Selected" : `Seat ${selecetedPerson[0]?.i} is currently available!`}
-                    name="newEmployee"
-                    labelCol={{
-                        span: 24,
-                    }}
-                    wrapperCol={{
-                        span: 24,
-                    }}
-                >
-                    {/* <Input disabled /> */}
-                    {(selecetedPerson[0]?.seat_id) !== "" && <Profile
-                        values={values}
-                        show={show}
-                        currentLayout={currentLayout}
-                        setCurrentLayout={setCurrentLayout}
-                        setUnOccupiedPeople={setUnOccupiedPeople}
-                        setSelectedPerson={setSelectedPerson}
-                        setOpen={setOpen} />}
-                </Form.Item>
-                    <Form.Item
-                        label="Current Employee"
-                        name="currentEmployee"
-                        labelCol={{
-                            span: 24,
-                        }}
-                        wrapperCol={{
-                            span: 24,
-                        }}
-                        rules={[{ required: true, message: 'Please input your name!' }]}
-                    >
-                        <Select
-                            className='ms-2'
-                            showSearch
-                            placeholder="Select New Employee"
-                            options={devoption}
-                            onChange={handleOccupuiedChange}
-                        />
-                    </Form.Item>
-                    <Form.Item className='d-flex justify-content-center mt-4'>
-                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
-                            Change
-                        </Button>
-                        {isSwapButtonVisible &&
-                            <Button onClick={handleConfirmSwap} type="primary">
-                                Swap
-                            </Button>
-                        }
-                    </Form.Item>
-                </> : null}
-                {isVisible && <>
-                    <Form.Item
-                        label="Unoccupied Peoples"
-                        name="unOccupied"
-                        labelCol={{
-                            span: 24,
-                        }}
-                        wrapperCol={{
-                            span: 24,
-                        }}
-                    >
-                        <Flex gap={8} wrap align="center">
-                            {unOccupiedPeople.filter((_, i) => (!!readMore && i < 5) || !readMore).map((tag, index) => (
-                                <Tag.CheckableTag
-                                    className={
-                                        tag.stack === 'frontend' ? 'react-bg ' :
-                                            tag.stack === 'php' ? 'php-bg ' :
-                                                tag.stack === 'backend' ? 'cf-bg ' : ""
-                                    }
-                                    key={index}
-                                    checked={selectedTag === tag}
-                                    onChange={(checked) => handleTagChange(tag, checked)}
-                                >
-                                    {tag.devName}
-                                </Tag.CheckableTag>
-                            ))}
-                            <Button color="primary" onClick={() => setReadMore(!readMore)} variant="link">
-                                {readMore ? "Read More" : "Read Less"}
-                            </Button>
-                        </Flex>
-                        <Button color="danger" className='mt-3' onClick={handleRandomOrder} variant="solid">
-                            Random Order
-                        </Button>
-                    </Form.Item>
-                </>}
-                {isVisible && selectedTag ? <>
-                    <UnOccupiedProfileCard values={selectedTag} />
-                    <Form.Item
-                        label="UnOccupied Seats"
-                        name="UnOccupiedSeats"
-                        labelCol={{
-                            span: 24,
-                        }}
-                        wrapperCol={{
-                            span: 22,
-                        }}
-                        rules={[{ required: true, message: 'Please input your name!' }]}
-                    >
-                        <Select
-                            className='ms-2'
-                            showSearch
-                            placeholder="Select Seat"
-                            options={[
-                                {
-                                    label: <span>UnOccupied Seats</span>,
-                                    title: 'un-occupied',
-                                    options: placeForunOccupiedSeats,
-                                }
-                            ]}
-                            onChange={handleUnOccupiedSeatSelect}
-                        />
-                    </Form.Item>
-                    <Form.Item className='d-flex justify-content-center mt-4'>
-                        <Button className='mx-2' onClick={handleSetOccupuiedSeatChange} type="primary">
-                            Change
-                        </Button>
-                    </Form.Item>
-                </> : null}
-            </Form>
-            <Modal
-                title="Swap User"
-                okText="Yes"
-                okType="primary"
-                open={isModalOpen} onOk={handleOk} onCancel={handleCancel}
-            >
-                <div>
-                    Are you sure you want to Swap the User?
-                </div>
-            </Modal>
-            <Modal
-                title="Here is a Random Seatings"
-                okText="Yes"
-                okType="primary"
-                className='mh-75'
-                open={isOccupiedModalOpen} onOk={handleOccupiedOk} onCancel={handleOccupiedCancel}
-            >
-                {updateOccupiedLayout?.randomObj?.length ? <Table columns={columns} pagination={{pageSize: 7}} dataSource={updateOccupiedLayout?.randomObj} /> : "No Empty Seats"}
+        <>
+            {
+                (radioValue === "single" || isVisible) ?
+                    <div>
+                        <Form
 
-            </Modal>
-        </div>
+                            form={form}
+                            name="basic"
+                            onFinish={onFinish}
+                            autoComplete="off"
+                            style={{ position: "fixed" }}
+                        >
+                            {!isVisible ? <><Form.Item
+                                label={(selecetedPerson[0]?.seat_id) ? "Employee Selected" : `Seat ${selecetedPerson[0]?.i} is currently available!`}
+                                name="newEmployee"
+                                labelCol={{
+                                    span: 24,
+                                }}
+                                wrapperCol={{
+                                    span: 24,
+                                }}
+                            >
+                                {/* <Input disabled /> */}
+                                {(selecetedPerson[0]?.seat_id) !== "" && <Profile
+                                    values={values}
+                                    show={show}
+                                    currentLayout={currentLayout}
+                                    setCurrentLayout={setCurrentLayout}
+                                    setUnOccupiedPeople={setUnOccupiedPeople}
+                                    setSelectedPerson={setSelectedPerson}
+                                    setOpen={setOpen} />}
+                            </Form.Item>
+                                <Form.Item
+                                    label="Current Employee"
+                                    name="currentEmployee"
+                                    labelCol={{
+                                        span: 24,
+                                    }}
+                                    wrapperCol={{
+                                        span: 24,
+                                    }}
+                                    rules={[{ required: true, message: 'Please input your name!' }]}
+                                >
+                                    <Select
+                                        className='ms-2'
+                                        showSearch
+                                        placeholder="Select New Employee"
+                                        options={devoption}
+                                        onChange={handleOccupuiedChange}
+                                    />
+                                </Form.Item>
+                                <Form.Item className='d-flex justify-content-center mt-4'>
+                                    <>
+                                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
+                                            Change
+                                        </Button>
+                                        {isSwapButtonVisible &&
+                                            <Button onClick={handleConfirmSwap} type="primary">
+                                                Swap
+                                            </Button>
+                                        }</>
+                                </Form.Item>
+
+                            </> : null}
+                            {isVisible && <>
+                                <Form.Item
+                                    label="Unoccupied Peoples"
+                                    name="unOccupied"
+                                    labelCol={{
+                                        span: 24,
+                                    }}
+                                    wrapperCol={{
+                                        span: 24,
+                                    }}
+
+                                >
+                                    <Flex gap={8} wrap align="center">
+                                        {unOccupiedPeople.filter((_, i) => (!!readMore && i < 5) || !readMore).map((tag, index) => (
+                                            <Tag.CheckableTag
+                                                className={
+                                                    tag.stack === 'frontend' ? 'react-bg ' :
+                                                        tag.stack === 'php' ? 'php-bg ' :
+                                                            tag.stack === 'backend' ? 'cf-bg ' : ""
+                                                }
+                                                key={index}
+                                                checked={selectedTag === tag}
+                                                onChange={(checked) => handleTagChange(tag, checked)}
+                                            >
+                                                {tag.devName}
+                                            </Tag.CheckableTag>
+                                        ))}
+                                        <Button color="primary" onClick={() => setReadMore(!readMore)} variant="link">
+                                            {readMore ? "Read More" : "Read Less"}
+                                        </Button>
+                                    </Flex>
+                                    <Button color="danger" className='mt-3' onClick={() => handleRandomOrder(true)} variant="solid">
+                                        Random Order
+                                    </Button>
+                                </Form.Item>
+                            </>}
+                            {isVisible && selectedTag ? <>
+                                <UnOccupiedProfileCard values={selectedTag} />
+                                <Form.Item
+                                    label="UnOccupied Seats"
+                                    name="UnOccupiedSeats"
+                                    labelCol={{
+                                        span: 24,
+                                    }}
+                                    wrapperCol={{
+                                        span: 22,
+                                    }}
+                                    rules={[{ required: true, message: 'Please input your name!' }]}
+                                >
+                                    <Select
+                                        className='ms-2'
+                                        showSearch
+                                        placeholder="Select Seat"
+                                        options={[
+                                            {
+                                                label: <span>UnOccupied Seats</span>,
+                                                title: 'un-occupied',
+                                                options: placeForunOccupiedSeats,
+                                            }
+                                        ]}
+                                        onChange={handleUnOccupiedSeatSelect}
+                                    />
+                                </Form.Item>
+                                <Form.Item className='d-flex justify-content-center mt-4'>
+                                    <Button className='mx-2' onClick={handleSetOccupuiedSeatChange} type="primary">
+                                        Change
+                                    </Button>
+                                </Form.Item>
+                            </> : null}
+                        </Form>
+                        <Modal
+                            title="Swap User"
+                            okText="Yes"
+                            okType="primary"
+                            open={isModalOpen} onOk={handleOk} onCancel={handleCancel}
+                        >
+                            <div>
+                                Are you sure you want to Swap the User?
+                            </div>
+                        </Modal>
+                        <Modal
+                            title="Here is a Random Seatings"
+                            okText="Yes"
+                            okType="primary"
+                            footer={updateOccupiedLayout?.randomObj?.length ? [
+                                <Button color="danger" variant="solid" onClick={() => handleRandomOrder(false)}>Reorder Again</Button>,
+                                <Button key="submit" type="primary" onClick={handleOccupiedOk}>
+                                    Yes
+                                </Button>,
+                                <Button key="back" onClick={handleOccupiedCancel}>
+                                    Close
+                                </Button>,
+                            ] : null}
+                            className='mh-75'
+                            open={isOccupiedModalOpen} onOk={handleOccupiedOk} onCancel={handleOccupiedCancel}
+                        >
+                            {updateOccupiedLayout?.randomObj?.length ? <>
+                                {/* <Table
+                                    columns={columns}
+                                    pagination={{ pageSize: 7 }}
+                                    dataSource={updateOccupiedLayout?.randomObj}
+                                /> */}
+                                <DndProvider backend={HTML5Backend}>
+                                    <Table
+                                        columns={columns}
+                                        dataSource={updateOccupiedLayout?.randomObj}
+                                        pagination={{ pageSize: 7 }}
+                                        rowKey="seat_id"
+                                        components={{
+                                            body: {
+                                                row: (props) => {
+                                                    if (props.children && props.children[0] && props.children[0].props.children) {
+                                                        if (props.children[0].props.children[0] === "Empty Seats") {
+                                                            return <tr {...props} />;
+                                                        }
+                                                    }
+                                                    // const index = props['data-row-key'] ? parseInt(props['data-row-key'].replace('s', '')) : null;
+                                                    const index = props['data-row-key']
+                                                    return <DraggableBodyRow {...props} moveRow={moveRow} index={index} />;
+                                                },
+                                            },
+                                        }}
+
+                                    />
+                                </DndProvider>
+                                {/* <Button type='primary' onClick={()=>handleRandomOrder(false)}>Reorder Again</Button> */}
+                            </>
+                                : "No Empty Seats"}
+                        </Modal>
+                    </div> :
+                    <div className='multiple-drawer-parent'>
+                        <h5>Selected Persons</h5>
+                        <div className='multiple-drawer-grid'>
+
+                            {selecetedPerson.map(person => {
+                                return (
+                                    <Tag key={person.devName}
+                                        onClose={() => handleMultipleDrawerUncheck(person)}
+                                        closeIcon={person.seat_id !== "" &&
+                                            <CloseOutlined style={(person.stack === "backend" || person.stack === "php") ? { color: "white" } : { color: "black" }} />}
+                                        className={`multiple-drawer-tags ${handleMultipleStageColorTag(person)}`}
+                                        style={person.stack === "php" && { color: 'white' }}
+                                    >{person.devName}
+                                    </Tag>
+                                )
+                            })}
+                        </div>
+                        {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary"
+                            style={{ marginTop: "30px", width: "fit-content", }}
+                            onClick={() => removeEmployee(true)}>Remove Employee </Button>}
+                    </div>
+            }
+        </>
     )
 }

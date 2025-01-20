@@ -47,13 +47,13 @@
 }
 
 .grid-parent-layout {
-  width: 70%;
+  width: 100%;
   overflow: auto;
 }
 
 .secondElement {
   padding: 50px;
-  width: 30%;
+  width: 40%;
   margin-left: 10px;
   border-left: solid 2px black;
   /* background-color: gainsboro; */
@@ -96,17 +96,17 @@
 
 @keyframes glow {
   0% {
-    box-shadow: 0 0 0 0 #db0d0d;
+    box-shadow: 0 0 0 0 #0ddb10;
   }
 
   50% {
-    box-shadow: 0 0 15px 0 #db0d0d;
+    box-shadow: 0 0 15px 0 #0ddb10;
   }
 }
 
 .custom-box-glow {
-  border-color: #db0d0d68 !important;
-  background: linear-gradient(360deg, #f2171763 10%, #f2171735 50%, #f2171738 100%);
+  border-color: #0ddb1068 !important;
+  background: linear-gradient(360deg, #17f24363 10%, #17f29735 50%, #17f27a38 100%);
   animation: glow 1.4s ease-out infinite;
 }
 
@@ -115,22 +115,74 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: 20px; /* Adjust size of the circle */
+  width: 20px;
+  /* Adjust size of the circle */
   height: 20px;
-  border-radius: 50%; /* Circular border */
-  border: 2px solid #1890ff; /* Professional blue border */
-  background-color: #e6f7ff; /* Light blue-gray background */
-  transition: background-color 0.3s; /* Smooth background transition */
+  border-radius: 50%;
+  /* Circular border */
+  border: 2px solid #1890ff;
+  /* Professional blue border */
+  background-color: #e6f7ff;
+  /* Light blue-gray background */
+  transition: background-color 0.3s;
+  /* Smooth background transition */
 }
 
 /* Phone Icon Style */
 .phone-icon {
-  font-size: 12px; /* Adjust icon size */
-  color: #1d39c4; /* Deep blue icon color */
+  font-size: 12px;
+  /* Adjust icon size */
+  color: #1d39c4;
+  /* Deep blue icon color */
 }
 
 /* Hover Effect */
 .phone-icon-container:hover {
-  background-color: #bae7ff; /* Darker blue background on hover */
+  background-color: #bae7ff;
+  /* Darker blue background on hover */
 }
 
+
+.multiple-drawer-parent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  text-align: start;
+  line-height: 30px;
+  /* position: relative; */
+}
+.multiple-drawer-grid {
+  /* display: grid; */  
+  margin-top: 20px;
+  /* grid-template-columns: auto auto auto; */
+  padding: 0px 5px 0px 5px;
+  gap: 10px;
+  width: 100%;
+}
+
+.multiple-drawer-tags {
+ width: fit-content;
+}
+
+@keyframes glowTL {
+  0% {
+    box-shadow: 0 0 0 0 #833ab4;
+  }
+
+  50% {
+    box-shadow: 0 0 15px 0 #833ab4;
+  }
+}
+
+.custom-box-glow-tl {
+  color: white;
+  border-color: #833ab4 !important;
+  background: #833ab4;
+  animation: glowTL 1.4s ease-out infinite;
+}
+
+.tl-group-color{
+  background-color: #5deeb1;
+}
