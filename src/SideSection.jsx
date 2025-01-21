@@ -28,7 +28,8 @@ export default function DrawerFn
         selectBoxGlow,       //State if the glow box while slecting
         selectedStack,
         radioValue,
-        removeEmployee
+        removeEmployee,
+        handleAutomaticScroll
     }) {
 
     const [placeForunOccupiedPeople, setPlaceForUnOccupiedPeople] = useState([])
@@ -262,7 +263,7 @@ export default function DrawerFn
                     ...item,
                     cls: handleUpdatedDataCheck(currentLayout[newEmployeePosition]?.cls),
                     devName: currentLayout[newEmployeePosition]?.devName,
-                    seat_id: currentLayout[newEmployeePosition]?.seat_id,
+                    seat_id: item.i,
                     role: currentLayout[newEmployeePosition]?.role,
                     stack: currentLayout[newEmployeePosition]?.stack,
                     devId: currentLayout[newEmployeePosition]?.devId,
@@ -281,7 +282,7 @@ export default function DrawerFn
                     ...item,
                     cls: `${handleUpdatedDataCheck(currentLayout[exitingEmployeePosition]?.cls)} `,
                     devName: currentLayout[exitingEmployeePosition]?.devName,
-                    seat_id: currentLayout[exitingEmployeePosition]?.seat_id,
+                    seat_id: item.i,
                     role: currentLayout[exitingEmployeePosition]?.role,
                     stack: currentLayout[exitingEmployeePosition]?.stack,
                     devId: currentLayout[exitingEmployeePosition]?.devId,
@@ -394,7 +395,7 @@ export default function DrawerFn
             }
             setCurrentLayout([...tempData]);
             api.info({
-                message: `Swap Done Successfully`,
+                message: `Employee Placed Successfully`,
                 placement: 'topRight',
             });
         }
@@ -410,10 +411,11 @@ export default function DrawerFn
             setIsSwapButtonVisible(false)
         }
         setSelectBoxGlow({ selectStatus: true, seatName: val });  // seting the status to true and seatname as the selected seat name
-
-        const posElement = document.getElementById(val).getBoundingClientRect();
-        const coordinate = { x: posElement.left, y: posElement.top }
-        document.getElementById("parentLayout").scrollLeft = (coordinate.x - 180);
+        handleAutomaticScroll(val)
+        // const posElement = document.getElementById(val).getBoundingClientRect();
+        // console.log("posElement",posElement);
+        // const coordinate = { x: posElement.left, y: posElement.top }
+        // document.getElementById("parentLayout").scrollLeft = (coordinate.x - 180);
     }
 
     const handleTagChange = (tag, checked) => {
@@ -457,66 +459,66 @@ export default function DrawerFn
             // const [draggedRow] = updatedRandomObj.splice(draggedIndex, 1);
             // updatedRandomObj.splice(hoveredIndex, 0, draggedRow);
 
-            let selected = updatedRandomObj[draggedIndex].seat_id 
+            let selected = updatedRandomObj[draggedIndex].seat_id
             let hovered = updatedRandomObj[hoveredIndex].seat_id
 
             const swapDataExceptSeatId = (updatedRandomObj, draggedIndex, hoveredIndex) => {
                 const draggedItem = { ...updatedRandomObj[draggedIndex] };
-                const hoveredItem = { ...updatedRandomObj[hoveredIndex] }; 
-            
+                const hoveredItem = { ...updatedRandomObj[hoveredIndex] };
+
                 const keysToSwap = Object.keys(draggedItem).filter((key) => key !== 'seat_id' && key !== 'x');
-            
+
                 keysToSwap.forEach((key) => {
                     const temp = draggedItem[key];
                     draggedItem[key] = hoveredItem[key];
                     hoveredItem[key] = temp;
                 });
-            
+
                 updatedRandomObj[draggedIndex] = draggedItem;
                 updatedRandomObj[hoveredIndex] = hoveredItem;
-            
+
                 return updatedRandomObj;
             };
 
             const swapSeatData = (updatedSeatLayout, selectedKey, hoveredKey) => {
                 // Clone the array to avoid mutating the original state
                 const updatedLayout = [...updatedSeatLayout];
-            
+
                 // Find the indices of the selected and hovered keys
                 const selectedIndex = updatedLayout.findIndex(item => item.seat_id === selectedKey);
                 const hoveredIndex = updatedLayout.findIndex(item => item.seat_id === hoveredKey);
-            
+
                 if (selectedIndex === -1 || hoveredIndex === -1) {
                     return updatedLayout;
                 }
-            
+
                 // Extract the selected and hovered items
                 const selectedItem = { ...updatedLayout[selectedIndex] };
                 const hoveredItem = { ...updatedLayout[hoveredIndex] };
-            
+
                 // List of properties to swap
-                const keysToSwap = ["devName","role", "stack", "devId", "isFresher", "TL_id"];
-            
+                const keysToSwap = ["devName", "role", "stack", "devId", "isFresher", "TL_id"];
+
                 // Swap the values of the properties
                 keysToSwap.forEach(key => {
                     const temp = selectedItem[key];
                     selectedItem[key] = hoveredItem[key];
                     hoveredItem[key] = temp;
                 });
-            
+
                 // Update the array with the swapped items
                 updatedLayout[selectedIndex] = selectedItem;
                 updatedLayout[hoveredIndex] = hoveredItem;
-            
+
                 return updatedLayout;
             };
-            
+
 
             let updatedrandomObj = swapDataExceptSeatId(updatedRandomObj, draggedIndex, hoveredIndex)
 
-            let updatedSeatLayout = [...prevLayout.updatedLayout] 
+            let updatedSeatLayout = [...prevLayout.updatedLayout]
 
-            let updatedSeat = swapSeatData(updatedSeatLayout,selected,hovered)
+            let updatedSeat = swapSeatData(updatedSeatLayout, selected, hovered)
 
             return {
                 ...prevLayout,
@@ -528,31 +530,31 @@ export default function DrawerFn
 
     const DraggableBodyRow = ({ moveRow, className, style, index, ...restProps }) => {
         const ref = useRef();
-    
+
         const [, drop] = useDrop({
             accept: "row",
             hover: (item) => {
                 if (!ref.current) return;
-            
+
                 const dragKey = item.dataRowKey; // Key of the dragged row (original value)
-            
+
                 const hoverKey = restProps["data-row-key"]; // Key of the currently hovered row
-            
+
                 if (dragKey === hoverKey) return; // Avoid unnecessary actions
-            
+
                 // Trigger row movement logic but do not modify item.dataRowKey
                 moveRow(dragKey, hoverKey, false); // False indicates it's not a drop yet
             },
             drop: (item) => {
                 if (!ref.current) return;
-    
+
                 const dragKey = item.dataRowKey; // Final key of the dragged row
                 const hoverKey = restProps["data-row-key"]; // Final key of the dropped row
-    
+
                 moveRow(dragKey, hoverKey, true); // Update state on drop
             },
         });
-    
+
         const [{ isDragging }, drag] = useDrag({
             type: "row",
             item: { dataRowKey: restProps["data-row-key"], index }, // Attach unique key and index
@@ -560,9 +562,9 @@ export default function DrawerFn
                 isDragging: monitor.isDragging(),
             }),
         });
-    
+
         drag(drop(ref));
-    
+
         return (
             <tr
                 ref={ref}
@@ -572,7 +574,7 @@ export default function DrawerFn
             />
         );
     };
-    
+
 
     return (
         <>
@@ -651,8 +653,9 @@ export default function DrawerFn
                                     }}
 
                                 >
-                                    <Flex gap={8} wrap align="center">
-                                        {unOccupiedPeople.filter((_, i) => (!!readMore && i < 5) || !readMore).map((tag, index) => (
+                                    <Flex gap={8} wrap align="center" style={{ maxHeight: unOccupiedPeople.length > 15 ? "400px" : "auto", overflow: "auto" }}>
+                                        {unOccupiedPeople.filter((_, i) => (!!readMore && i < 15) || !readMore).map((tag, index) => (
+
                                             <Tag.CheckableTag
                                                 className={
                                                     tag.stack === 'frontend' ? 'react-bg ' :

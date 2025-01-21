@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import GridLayout from 'react-grid-layout';
-import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, message, Badge, Switch, Tooltip } from 'antd';
+import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, InputNumber, Badge, Switch, Tooltip } from 'antd';
 import { layouts } from './layouts';
 import DrawerFn from './SideSection';
 import { devList } from './devList';
@@ -34,7 +34,14 @@ const App = () => {
   const [badgeContent, setBadgeContent] = useState(false); // Initial badge content
   const [isIntercomVisible, setIsIntercomVisible] = useState(false);
   const [isTLlist, setIsTLlist] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]);
   const [selectedTL, setselectedTL] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [isRemoveRangeModalOpen, setIsRemoveRangeModalOpen] = useState(false);
+  const [rangeSelect, setRangeSelect] = useState({});
+  const [rangeValue, setRangeValue] = useState({})
+
+  console.log("rangeSelect", rangeValue);
 
 
 
@@ -51,16 +58,20 @@ const App = () => {
     }).map(a => (a.seat_id === "") ? ({ ...a, cls: "seat empty-seat" }) : ({ ...a, cls: "seat" }));
 
     const remainingDevs = devList.filter((dev) => !dev.seat_id);
+    const employeeList = combinedArr.filter(item => item.devId && item.devId !== "").map((item) => ({ value: item.devId, label: item.devName }));
     setUnOccupiedPeople(remainingDevs);
     setCurrentLayout(combinedArr)
+    setEmployeeList(employeeList)
     // setCurrentLayout(localStorage.getItem("seatLayout") ? JSON.parse(localStorage.getItem("seatLayout")) :combinedArr)
     setSelectedPerson([]);
   }, [])
 
   useEffect(() => {
     setOpen(currentLayout.some(item => item.cls.includes("selected-place")));
-    const tllist = currentLayout.filter(item => item.devId && item.devId === item.TL_id).map((item) => ({ value: item.TL_id, label: item.devName }))
-    setIsTLlist(tllist)
+    const tllist = currentLayout.filter(item => item.devId && item.devId === item.TL_id).map((item) => ({ value: item.TL_id, label: item.devName }));
+    const employeeList = currentLayout.filter(item => item.devId && item.devId !== "").map((item) => ({ value: item.devId, label: item.devName }));
+    setEmployeeList(employeeList);
+    setIsTLlist(tllist);
   }, [currentLayout])
 
   useEffect(() => {
@@ -88,11 +99,16 @@ const App = () => {
     }
 
   }, [radioValue])
+  useEffect(() => {
+    let employeeList
+    if (selectedTL !== "" && selectedTL) employeeList = currentLayout.filter(item => item.devId && item.TL_id === selectedTL).map((item) => ({ value: item.devId, label: item.devName }));
+    else employeeList = currentLayout.filter(item => item.devId).map((item) => ({ value: item.devId, label: item.devName }));
+    setEmployeeList(employeeList);
+  }, [selectedTL])
 
   const handleOk = () => {
     setIsModalOpen(false);
   };
-
 
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -151,23 +167,92 @@ const App = () => {
       else return item;
     })
     setCurrentLayout(finalUpdatedLayout);
+    setSelectedEmployee(null);
     setselectedTL(null);
-    // setCurrentLayout(updatedLayout);
   };
 
+  const handleRemoveRangeModalOk = () => {
+    const { startRange, endRange } = rangeSelect
+    const startNumber = parseInt(startRange?.substring(1));
+    const endNumber = parseInt(endRange?.substring(1));
+    const updatedRemoveLayout = currentLayout.map((item) => {
+      const seatNumber = parseInt(item?.seat_id?.substring(1));
+      if (seatNumber >= startNumber && seatNumber <= endNumber) {
+        setUnOccupiedPeople((prev) => [...prev, { ...item, i: null }])
+        return {
+          ...item,
+          unOccupied: true,
+          cls: "seat empty-seat",
+          devId: "",
+          devName: "",
+          role: "",
+          stack: "",
+          imageUrl: "",
+          TL_id: "",
+          seat_id: ""
+        };
+      }
+      return item
+
+    })
+    setCurrentLayout(updatedRemoveLayout)
+    setIsRemoveRangeModalOpen(false)
+    setRangeValue({})
+    setRangeSelect({})
+  }
+
+  const handleRemoveRangeModalCancel = () => {
+    setRangeValue({})
+    setRangeSelect({})
+    setIsRemoveRangeModalOpen(false)
+  }
+
   const handleSelectTL = (value) => {
+    let seat_no;
     const updated = currentLayout.map((item) => {
       if (value === item.devId) {
-        return { ...item, cls: "custom-box-glow-tl" }
+        seat_no = item.i
+        return { ...item, cls: `${item.cls}  custom-box-glow-tl` }
       } else if (value === item.TL_id) {
-        return { ...item, cls: "tl-group-color" }
+        return { ...item, cls: `${item.cls} tl-group-color` }
       } else {
         return (item.seat_id === "") ? ({ ...item, cls: "seat empty-seat" }) : ({ ...item, cls: "seat" })
       }
     })
+    setselectedStack("All");
+    setselectedTL(value);
+    setCurrentLayout(updated);
+    setSelectedEmployee(null);
+    handleAutomaticScroll(seat_no)
+  }
+
+  const handleDeleteTlSelected = () => {
+    setselectedTL(null);
+    const updatedLayout = currentLayout.map(item => {
+      if (item.cls.includes("custom-box-glow-tl") || item.cls.includes("tl-group-color") || item.cls.includes("custom-box-glow-employee")) {
+        if (item.cls.includes("custom-box-glow-tl")) return { ...item, cls: item.cls.replace("custom-box-glow-tl", "") }
+        else if (item.cls.includes("tl-group-color")) return { ...item, cls: item.cls.replace("tl-group-color", "") }
+        else return { ...item, cls: item.cls.replace("custom-box-glow-employee", "") }
+      }
+      else return item
+    })
+    setCurrentLayout(updatedLayout)
+  }
+
+  const handleEmployee = (value) => {
+    let seat_no;
+    const updated = currentLayout.map((item) => {
+      if (value === item.devId) {
+        seat_no = item.i
+        return { ...item, cls: `${item.cls} custom-box-glow-employee` }
+      }
+      else if (item.cls.includes("custom-box-glow-employee")) return { ...item, cls: item.cls.replace("custom-box-glow-employee", "") }
+      else return item
+    })
     setselectedStack("All")
-    setselectedTL(value)
-    setCurrentLayout(updated)
+    setSelectedEmployee(value);
+    setCurrentLayout(updated);
+    handleAutomaticScroll(seat_no)
   }
 
 
@@ -245,11 +330,15 @@ const App = () => {
     setUnOccupiedPeople((prev) => [...prev, ...updatedUnoccoupied])
     setCurrentLayout(updatedLayout)
     api.info({
-      message: `Users removed from the seat successfully`,
+      message: `Employee removed from the seat successfully`,
       placement: 'topRight',
     });
     setIsModalOpen(false);
     setSelectedPerson([]);
+  }
+  const onRangeSelectChange = (value, type) => {
+    setRangeSelect(prev => ({ ...prev, [type]: 's' + value }))
+    setRangeValue(prev => ({ ...prev, [type]: value }))
   }
 
   const onChange = (value) => {
@@ -268,6 +357,7 @@ const App = () => {
   }
 
   const handleUnoccupiedPeople = () => {
+    setSelectedEmployee(null)
     setselectedTL(null);
     setIsVisible(true);
     setOpen(true);
@@ -286,6 +376,15 @@ const App = () => {
     setIsCompleteModalOpen(false)
   }
 
+  const handleAutomaticScroll = (val) => {
+    const targetElement = document.getElementById(val);
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: "smooth", // Smooth scrolling animation
+        block: "center",    // Scroll so the element is centered vertically
+      });
+    }
+  }
 
   return (
     <Layout>
@@ -331,35 +430,39 @@ const App = () => {
             },
           ]}
         />
-        <Select
-          style={{
-            width: 150,
-          }}
-          className='ms-2'
-          onChange={handleSelectTL}
-          showSearch
-          optionFilterProp="label"
-          placeholder="Select TeamLeader"
-          value={selectedTL}
-          options={isTLlist}
-        />
+        <div>
+          <Select
+            style={{
+              width: 150,
+            }}
+            suffixIcon={selectedTL && <DeleteOutlined onClick={() => handleDeleteTlSelected()} />}
+            className='ms-2'
+            onChange={handleSelectTL}
+            showSearch
+            optionFilterProp="label"
+            placeholder="Select TeamLeader"
+            value={selectedTL}
+            options={isTLlist}
+          />
+
+        </div>
         <Select
           style={{
             width: 150,
           }}
           className='ms-2'
           suffixIcon={<DeleteOutlined onClick={() => {
-            // setSelectedEmployee(null);
-            // const updatedLayout = currentLayout.map(item => (item.cls.includes("custom-box-glow-employee")) ? { ...item, cls: item.cls.replace("custom-box-glow-employee", "") } : item)
-            // setCurrentLayout(updatedLayout)
+            setSelectedEmployee(null);
+            const updatedLayout = currentLayout.map(item => (item.cls.includes("custom-box-glow-employee")) ? { ...item, cls: item.cls.replace("custom-box-glow-employee", "") } : item)
+            setCurrentLayout(updatedLayout)
           }}
           />}
-          // onChange={handleEmployee}
-          // showSearch
-          // optionFilterProp="label"
+          onChange={handleEmployee}
+          showSearch
+          optionFilterProp="label"
           placeholder="Select Employee"
-        // value={selectedEmployee}
-        // options={employeeList}
+          value={selectedEmployee}
+          options={employeeList}
         />
         <div className='icons-container'>
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -387,6 +490,7 @@ const App = () => {
             <UserDeleteOutlined className='icon-wrapper' onClick={handleUnoccupiedPeople} />
           </Tooltip>
         </div>
+        <Button type="primary" onClick={() => setIsRemoveRangeModalOpen(true)}>Remove By Range</Button>
 
       </Header>
       <Content
@@ -428,25 +532,13 @@ const App = () => {
                 key={val?.i}
 
                 id={val?.i} // id to DOM scroll while select the seat
-
-                //seat ${val.cls} ${val.cusClass} ${val.emptyArea ? 'walk-area' : 'dev-area'} 
-                // className={`
-                // seat 
-                // ${val.cls} 
-                // ${val.emptyArea ? 'walk-area':val.unchange && "unchange-cells"}
-                // ${val.seat_id ==="" && "empty-seat"} 
-                //  ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"}  `}
-                //(selecetedPerson.reduce((a,c)=>a||c.i ===val.i,false))
-
-                // ${radioValue === "single" && (selecetedPerson.find(a => a.i === val.i)) && open && "selected-place"}
-                // ${radioValue === "multiple" && (selecetedPerson.find(a => a.i === val.i)) && "selected-place"}
                 className={`seat
                 ${val.unchange && "walk-area"}
                 ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"} 
                 ${val.cls}
                 `}
               >
-                {!val.unchange && val.extension_no && isIntercomVisible ?
+                {val.extension_no && isIntercomVisible ?
                   <Badge
                     count={
                       <div
@@ -490,6 +582,7 @@ const App = () => {
             selectedStack={selectedStack}
             radioValue={radioValue}  ///modified
             removeEmployee={setIsModalOpen} ///modified
+            handleAutomaticScroll={handleAutomaticScroll}
           /></div > : null}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
@@ -526,6 +619,31 @@ const App = () => {
       >
         <div>
           Are you sure want to Change the place?
+        </div>
+      </Modal>
+      <Modal
+        title="Change User"
+        open={isRemoveRangeModalOpen}
+        onOk={handleRemoveRangeModalOk}
+        onCancel={handleRemoveRangeModalCancel}
+        okText="Yes"
+        okType="primary"
+      >
+        <div>
+          <InputNumber
+            name='startRange'
+            onChange={(e) => onRangeSelectChange(e, "startRange")}
+            value={rangeValue.startRange}
+          />
+          <InputNumber
+            name='endRange'
+            className='m-2'
+            onChange={(e) => onRangeSelectChange(e, "endRange")}
+            value={rangeValue.endRange}
+          />
+          <div>
+            Are you sure want to select the places?
+          </div>
         </div>
       </Modal>
     </Layout >

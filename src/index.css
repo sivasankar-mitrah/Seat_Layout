@@ -27,6 +27,7 @@
 }
 
 .selected-place {
+  color: #000000 !important;
   background-color: orange !important;
 
 }
@@ -204,3 +205,21 @@
   display: flex;
   gap: 2rem;
 }
+
+@keyframes glowEmployee {
+  0% {
+    box-shadow: 0 0 0 0 #25359d58;
+  }
+
+  50% {
+    box-shadow: 0 0 15px 0 #25359d;
+  }
+}
+
+.custom-box-glow-employee {
+  color: white;
+  border-color: #25359d !important;
+  background: #25359d;
+  animation: glowEmployee 1.4s ease-out infinite;
+}
+
