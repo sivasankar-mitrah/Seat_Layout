@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import GridLayout from 'react-grid-layout';
-import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, message, Badge, Switch } from 'antd';
+import { Button, Form, Layout, Select, Radio, Space, Modal, Drawer, Flex, Tag, message, Badge, Switch, Tooltip } from 'antd';
 import { layouts } from './layouts';
 import DrawerFn from './SideSection';
 import { devList } from './devList';
@@ -8,7 +8,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNotification } from './common/notification';
-import { CheckOutlined, CloseOutlined, PhoneTwoTone } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, DeleteOutlined, PhoneOutlined, PhoneTwoTone, UserDeleteOutlined, UsergroupAddOutlined, UserOutlined } from '@ant-design/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPhone } from '@fortawesome/free-solid-svg-icons';
 
@@ -82,10 +82,9 @@ const App = () => {
       form.setFieldsValue({ newEmployee: `${selecetedPerson[0]?.devName} - ${selecetedPerson[0]?.i}` });
       setDisplayStack([selecetedPerson[0]]);
     }
-    else if(radioValue === "multiple" && selecetedPerson.length!==0 )
-    {
-      setSelectedPerson((prev)=>prev.filter(item=>item.seat_id!==""));
-      setCurrentLayout((prev)=>prev.map(item=>(item.seat_id === "")? {...item,cls:`empty-seat`}: item))
+    else if (radioValue === "multiple" && selecetedPerson.length !== 0) {
+      setSelectedPerson((prev) => prev.filter(item => item.seat_id !== ""));
+      setCurrentLayout((prev) => prev.map(item => (item.seat_id === "") ? { ...item, cls: `empty-seat` } : item))
     }
 
   }, [radioValue])
@@ -159,9 +158,9 @@ const App = () => {
   const handleSelectTL = (value) => {
     const updated = currentLayout.map((item) => {
       if (value === item.devId) {
-        return {...item, cls:"custom-box-glow-tl"}
+        return { ...item, cls: "custom-box-glow-tl" }
       } else if (value === item.TL_id) {
-        return {...item, cls:"tl-group-color"}
+        return { ...item, cls: "tl-group-color" }
       } else {
         return (item.seat_id === "") ? ({ ...item, cls: "seat empty-seat" }) : ({ ...item, cls: "seat" })
       }
@@ -253,11 +252,11 @@ const App = () => {
     setSelectedPerson([]);
   }
 
-  const onChange = (e) => {
-    if (e) {
-      setRadioValue('single')
-    } else {
+  const onChange = (value) => {
+    if (value === "single") {
       setRadioValue('multiple')
+    } else {
+      setRadioValue('single')
     }
   };
 
@@ -283,9 +282,9 @@ const App = () => {
   };
 
   const handleComplete = () => {
-    localStorage.setItem("seatLayout" , JSON.stringify(currentLayout))
+    localStorage.setItem("seatLayout", JSON.stringify(currentLayout))
     setIsCompleteModalOpen(false)
-}
+  }
 
 
   return (
@@ -301,6 +300,9 @@ const App = () => {
           justifyContent: 'space-between'
         }}
       >
+        <div className='header-imag-wrapper'>
+          <img src='/assets/mitrah_logo.png' alt='mitrah' />
+        </div>
         <Select
           style={{
             width: 150,
@@ -341,26 +343,50 @@ const App = () => {
           value={selectedTL}
           options={isTLlist}
         />
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ marginRight: "8px", color: "white" }}>Show Intercom  <FontAwesomeIcon icon={faPhone} style={{ fontSize: "15px", color: "lightblue" }} />
-          </span>
-          <Switch
-            checkedChildren={<CheckOutlined />}
-            unCheckedChildren={<CloseOutlined />}
-            onClick={(e) => setIsIntercomVisible(e)}
-          />
-        </div>
-        <Switch
-          style={(radioValue === "multiple")? {backgroundColor:"#1677ff",fontWeight:"bold"}:{fontWeight:"bold"}}
-          checkedChildren={"single"}
-          unCheckedChildren={"multiple"}
-          defaultChecked
-          onChange={onChange} 
-          value={radioValue === "single"}
+        <Select
+          style={{
+            width: 150,
+          }}
+          className='ms-2'
+          suffixIcon={<DeleteOutlined onClick={() => {
+            // setSelectedEmployee(null);
+            // const updatedLayout = currentLayout.map(item => (item.cls.includes("custom-box-glow-employee")) ? { ...item, cls: item.cls.replace("custom-box-glow-employee", "") } : item)
+            // setCurrentLayout(updatedLayout)
+          }}
+          />}
+          // onChange={handleEmployee}
+          // showSearch
+          // optionFilterProp="label"
+          placeholder="Select Employee"
+        // value={selectedEmployee}
+        // options={employeeList}
         />
-        
-        <Button type="primary" onClick={onHandleComplete}>Complete </Button>
-        <Button type="primary" onClick={handleUnoccupiedPeople} >UnOccupied Peoples </Button>
+        <div className='icons-container'>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Tooltip placement="top" title={"Show Intercom"}>
+              <span className='icon-wrapper'>
+                <PhoneOutlined />
+              </span>
+              <Switch
+                checkedChildren={<CheckOutlined />}
+                unCheckedChildren={<CloseOutlined />}
+                onClick={(e) => setIsIntercomVisible(e)}
+              />
+            </Tooltip>
+          </div>
+          <div className='icon-wrapper'>
+            <Tooltip placement="top" title={radioValue === "multiple" ? "Multiple Select" : "Single Select"}>
+              {radioValue === "multiple" ? <UsergroupAddOutlined onClick={() => onChange("multiple")} />
+                : <UserOutlined onClick={() => onChange("single")} />}
+            </Tooltip>
+          </div>
+          <Tooltip placement="top" title={"Complete"}>
+            <CheckOutlined onClick={onHandleComplete} className='icon-wrapper' />
+          </Tooltip>
+          <Tooltip placement="top" title={"UnOccupied Employees"}>
+            <UserDeleteOutlined className='icon-wrapper' onClick={handleUnoccupiedPeople} />
+          </Tooltip>
+        </div>
 
       </Header>
       <Content
@@ -416,7 +442,7 @@ const App = () => {
                 // ${radioValue === "multiple" && (selecetedPerson.find(a => a.i === val.i)) && "selected-place"}
                 className={`seat
                 ${val.unchange && "walk-area"}
-                ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus ) && "custom-box-glow"} 
+                ${(selectBoxGlow.seatName === val?.i && selectBoxGlow.selectStatus) && "custom-box-glow"} 
                 ${val.cls}
                 `}
               >
@@ -463,7 +489,7 @@ const App = () => {
             selectBoxGlow={selectBoxGlow}
             selectedStack={selectedStack}
             radioValue={radioValue}  ///modified
-            removeEmployee ={setIsModalOpen} ///modified
+            removeEmployee={setIsModalOpen} ///modified
           /></div > : null}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>

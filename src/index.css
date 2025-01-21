@@ -186,3 +186,21 @@
 .tl-group-color{
   background-color: #5deeb1;
 }
+
+.icon-wrapper svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.ant-layout-header {
+  background-color: white;
+}
+
+.header-imag-wrapper img {
+ width: 10rem;
+}
+
+.icons-container {
+  display: flex;
+  gap: 2rem;
+}
