@@ -3,7 +3,7 @@ import { Button, Flex, Form, Modal, Select, Table, Tag } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
 import { useNotification } from './common/notification';
-import { CloseOutlined } from '@ant-design/icons';
+import { CloseCircleFilled, CloseOutlined } from '@ant-design/icons';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -22,6 +22,7 @@ export default function DrawerFn
         enableUnOccupiedViews,
         show,
         isVisible,
+        setIsVisible,
         setUnOccupiedPeople,
         unOccupiedPeople,
         setSelectBoxGlow,      // setState of the glow box 
@@ -45,6 +46,10 @@ export default function DrawerFn
     const [devoption, setDevoption] = useState([]);
     const [isOccupiedModalOpen, setIsOccupiedModalOpen] = useState(false);
     const [updateOccupiedLayout, setUpdateOccupiedLayout] = useState({});
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 7,
+      });
     const api = useNotification();
 
     const values = form.getFieldValue();
@@ -57,6 +62,17 @@ export default function DrawerFn
 
     }, [])
 
+    useEffect(() => {
+        if (!isVisible && selectedTag) {
+            setSelectedTag(null)
+            form.setFieldsValue({ UnOccupiedSeats: null })
+            setSelectBoxGlow({ seatName: "", selectStatus: false });
+          } 
+    },[isVisible,selectedTag])
+
+      const handleTableChange = (pagination) => {
+            setPagination(pagination);
+        };
     useEffect(() => {
         let updatedOption = [
             {
@@ -149,6 +165,7 @@ export default function DrawerFn
 
 
         form.setFieldsValue({ UnOccupiedSeats: null });
+        setSelectedTag(null)
         setSelectBoxGlow({ seatName: "", selectStatus: true });
         setCurrentLayout(updatedCurrentLayout);
     }
@@ -159,6 +176,7 @@ export default function DrawerFn
     }
 
     const handleOccupiedCancel = () => {
+        setPagination({current:1 , pageSize:7})
         setIsOccupiedModalOpen(false)
     }
 
@@ -323,6 +341,10 @@ export default function DrawerFn
             }
         })
         setOpen(false)
+        api.info({
+            message: `Employee Moved Successfully`,
+            placement: 'topRight',
+        });
         setCurrentLayout(updatedData.map(item => (selectedStack !== "All" && item.stack === selectedStack) ? {
             ...item, cls: item.stack
         } : item));
@@ -337,7 +359,7 @@ export default function DrawerFn
 
     const columns = [
         {
-            title: 'Empty Seats',
+            title: 'Available Seats',
             dataIndex: 'seat_id',
         },
         {
@@ -413,7 +435,6 @@ export default function DrawerFn
         setSelectBoxGlow({ selectStatus: true, seatName: val });  // seting the status to true and seatname as the selected seat name
         handleAutomaticScroll(val)
         // const posElement = document.getElementById(val).getBoundingClientRect();
-        // console.log("posElement",posElement);
         // const coordinate = { x: posElement.left, y: posElement.top }
         // document.getElementById("parentLayout").scrollLeft = (coordinate.x - 180);
     }
@@ -642,6 +663,7 @@ export default function DrawerFn
 
                             </> : null}
                             {isVisible && <>
+                                <div style={{display:"flex"}}>
                                 <Form.Item
                                     label="Unoccupied Peoples"
                                     name="unOccupied"
@@ -677,6 +699,11 @@ export default function DrawerFn
                                         Random Order
                                     </Button>
                                 </Form.Item>
+                                    <Button style={{ marginRight: '50px' }} color='danger' type='danger' variant='danger' onClick={() => {
+                                        setIsVisible(false);
+                                        !selecetedPerson.length ? setOpen(false) : setOpen(true)
+                                    }}><CloseCircleFilled size={'large'} /></Button>
+                                </div>   
                             </>}
                             {isVisible && selectedTag ? <>
                                 <UnOccupiedProfileCard values={selectedTag} />
@@ -695,6 +722,7 @@ export default function DrawerFn
                                         className='ms-2'
                                         showSearch
                                         placeholder="Select Seat"
+                                        value={unOccupiedselectedSeat}
                                         options={[
                                             {
                                                 label: <span>UnOccupied Seats</span>,
@@ -723,7 +751,7 @@ export default function DrawerFn
                             </div>
                         </Modal>
                         <Modal
-                            title="Here is a Random Seatings"
+                            title="Randomized Seat Allocation"
                             okText="Yes"
                             okType="primary"
                             footer={updateOccupiedLayout?.randomObj?.length ? [
@@ -748,7 +776,8 @@ export default function DrawerFn
                                     <Table
                                         columns={columns}
                                         dataSource={updateOccupiedLayout?.randomObj}
-                                        pagination={{ pageSize: 7 }}
+                                        pagination={pagination}
+                                        onChange={handleTableChange}
                                         rowKey="seat_id"
                                         components={{
                                             body: {
@@ -778,7 +807,7 @@ export default function DrawerFn
 
                             {selecetedPerson.map(person => {
                                 return (
-                                    <Tag key={person.devName}
+                                    <Tag key={person.devId}
                                         onClose={() => handleMultipleDrawerUncheck(person)}
                                         closeIcon={person.seat_id !== "" &&
                                             <CloseOutlined style={(person.stack === "backend" || person.stack === "php") ? { color: "white" } : { color: "black" }} />}
@@ -789,7 +818,7 @@ export default function DrawerFn
                                 )
                             })}
                         </div>
-                        {radioValue === "multiple" && selecetedPerson?.length > 1 && <Button type="primary"
+                        {radioValue === "multiple" && selecetedPerson?.length >= 1 && <Button type="primary"
                             style={{ marginTop: "30px", width: "fit-content", }}
                             onClick={() => removeEmployee(true)}>Remove Employee </Button>}
                     </div>

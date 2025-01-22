@@ -8,7 +8,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNotification } from './common/notification';
-import { CheckOutlined, CloseOutlined, DeleteOutlined, PhoneOutlined, PhoneTwoTone, UserDeleteOutlined, UsergroupAddOutlined, UserOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, DeleteColumnOutlined, DeleteOutlined, PhoneOutlined, PhoneTwoTone, UserDeleteOutlined, UsergroupAddOutlined, UserOutlined } from '@ant-design/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPhone } from '@fortawesome/free-solid-svg-icons';
 
@@ -40,8 +40,8 @@ const App = () => {
   const [isRemoveRangeModalOpen, setIsRemoveRangeModalOpen] = useState(false);
   const [rangeSelect, setRangeSelect] = useState({});
   const [rangeValue, setRangeValue] = useState({})
+  const [errorMessage, setErrorMessage] = useState("")
 
-  console.log("rangeSelect", rangeValue);
 
 
 
@@ -129,8 +129,8 @@ const App = () => {
       }
     }
 
-    const show = devList.filter((data) => {
-      if (data.seat_id === (val.i)) {
+    const show = currentLayout.filter((data) => {
+      if (data.i === (val.i)) {
         return data.stack
       }
     })
@@ -173,32 +173,43 @@ const App = () => {
 
   const handleRemoveRangeModalOk = () => {
     const { startRange, endRange } = rangeSelect
-    const startNumber = parseInt(startRange?.substring(1));
-    const endNumber = parseInt(endRange?.substring(1));
-    const updatedRemoveLayout = currentLayout.map((item) => {
-      const seatNumber = parseInt(item?.seat_id?.substring(1));
-      if (seatNumber >= startNumber && seatNumber <= endNumber) {
-        setUnOccupiedPeople((prev) => [...prev, { ...item, i: null }])
-        return {
-          ...item,
-          unOccupied: true,
-          cls: "seat empty-seat",
-          devId: "",
-          devName: "",
-          role: "",
-          stack: "",
-          imageUrl: "",
-          TL_id: "",
-          seat_id: ""
-        };
-      }
-      return item
+    if (!startRange) {
+      setErrorMessage("Enter the start value")
+    } else if (!endRange) {
+      setErrorMessage("Enter the end value")
+    } else if (startRange > endRange) {
+      setErrorMessage("Entered start value is greater than end value")
+    } else if (startRange === endRange) {
+      setErrorMessage("The start value and end value are same")
+    } else {
+      const startNumber = parseInt(startRange?.substring(1));
+      const endNumber = parseInt(endRange?.substring(1));
+      const updatedRemoveLayout = currentLayout.map((item) => {
+        const seatNumber = parseInt(item?.seat_id?.substring(1));
+        if (seatNumber >= startNumber && seatNumber <= endNumber) {
+          setUnOccupiedPeople((prev) => [...prev, { ...item, i: null }])
+          return {
+            ...item,
+            unOccupied: true,
+            cls: "seat empty-seat",
+            devId: "",
+            devName: "",
+            role: "",
+            stack: "",
+            imageUrl: "",
+            TL_id: "",
+            seat_id: ""
+          };
+        }
+        return item
 
-    })
-    setCurrentLayout(updatedRemoveLayout)
-    setIsRemoveRangeModalOpen(false)
-    setRangeValue({})
-    setRangeSelect({})
+      })
+      setCurrentLayout(updatedRemoveLayout)
+      setIsRemoveRangeModalOpen(false)
+      setRangeValue({})
+      setErrorMessage("")
+      setRangeSelect({})
+    }
   }
 
   const handleRemoveRangeModalCancel = () => {
@@ -212,9 +223,9 @@ const App = () => {
     const updated = currentLayout.map((item) => {
       if (value === item.devId) {
         seat_no = item.i
-        return { ...item, cls: `${item.cls}  custom-box-glow-tl` }
+        return { ...item, cls: `seat custom-box-glow-tl` }
       } else if (value === item.TL_id) {
-        return { ...item, cls: `${item.cls} tl-group-color` }
+        return { ...item, cls: `seat tl-group-color` }
       } else {
         return (item.seat_id === "") ? ({ ...item, cls: "seat empty-seat" }) : ({ ...item, cls: "seat" })
       }
@@ -364,11 +375,11 @@ const App = () => {
   }
 
   const handleMouseEnter = (e) => {
-    setBadgeContent(true);
+    setBadgeContent(e);
   };
 
   const handleMouseLeave = () => {
-    setBadgeContent(false);
+    setBadgeContent(null);
   };
 
   const handleComplete = () => {
@@ -465,8 +476,8 @@ const App = () => {
           options={employeeList}
         />
         <div className='icons-container'>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <Tooltip placement="top" title={"Show Intercom"}>
+          <Tooltip placement="top" title={"Show Intercom"}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className='icon-wrapper'>
                 <PhoneOutlined />
               </span>
@@ -475,22 +486,28 @@ const App = () => {
                 unCheckedChildren={<CloseOutlined />}
                 onClick={(e) => setIsIntercomVisible(e)}
               />
-            </Tooltip>
-          </div>
+            </div>
+          </Tooltip>
           <div className='icon-wrapper'>
             <Tooltip placement="top" title={radioValue === "multiple" ? "Multiple Select" : "Single Select"}>
-              {radioValue === "multiple" ? <UsergroupAddOutlined onClick={() => onChange("multiple")} />
-                : <UserOutlined onClick={() => onChange("single")} />}
+                {radioValue === "multiple" ? <Button type='primary' onClick={() => onChange("multiple")} ><UsergroupAddOutlined /></Button>
+                  : <Button type='primary' onClick={() => onChange("single")} ><UserOutlined /></Button>}
             </Tooltip>
           </div>
           <Tooltip placement="top" title={"Complete"}>
-            <CheckOutlined onClick={onHandleComplete} className='icon-wrapper' />
+            <Button type='primary' onClick={onHandleComplete}>
+              <CheckOutlined  className='icon-wrapper' />
+            </Button>
           </Tooltip>
           <Tooltip placement="top" title={"UnOccupied Employees"}>
-            <UserDeleteOutlined className='icon-wrapper' onClick={handleUnoccupiedPeople} />
+            <Button type='primary'  onClick={handleUnoccupiedPeople}>
+              <UserDeleteOutlined className='icon-wrapper'  />
+            </Button>
           </Tooltip>
         </div>
-        <Button type="primary" onClick={() => setIsRemoveRangeModalOpen(true)}>Remove By Range</Button>
+        <Tooltip placement="top" title={"Remove by Range"}>
+          <Button type="primary" onClick={() => setIsRemoveRangeModalOpen(true)}><DeleteColumnOutlined /></Button>
+        </Tooltip>
 
       </Header>
       <Content
@@ -538,22 +555,35 @@ const App = () => {
                 ${val.cls}
                 `}
               >
-                {val.extension_no && isIntercomVisible ?
+                {val.extension_no && isIntercomVisible ? (
                   <Badge
                     count={
                       <div
                         className="phone-icon-container"
-                        onMouseEnter={handleMouseEnter}
+                        onMouseEnter={() => handleMouseEnter(val.i)}
                         onMouseLeave={handleMouseLeave}
                       >
-                        {badgeContent ? val.extension_no : <PhoneTwoTone className="phone-icon" />}
+                        {badgeContent === val.i ? val.extension_no : <PhoneTwoTone className="phone-icon" />}
                       </div>
                     }
                     offset={[offset_X, offset_Y]} // Position adjustment
                   >
-                    <span style={(isIntercomVisible && selectedStack === "backend" && !val?.cls.includes("selected-seat") && val?.stack === "backend") ? { color: "white" } : {}}>{val.i} </span>
+                    <span
+                      style={
+                        isIntercomVisible &&
+                          selectedStack === "backend" &&
+                          !val?.cls.includes("selected-seat") &&
+                          val?.stack === "backend"
+                          ? { color: "white" }
+                          : {}
+                      }
+                    >
+                      {val.i}
+                    </span>
                   </Badge>
-                  : val?.i}
+                ) : (
+                  val?.i
+                )}
 
               </div>
             })}
@@ -583,6 +613,7 @@ const App = () => {
             radioValue={radioValue}  ///modified
             removeEmployee={setIsModalOpen} ///modified
             handleAutomaticScroll={handleAutomaticScroll}
+            setIsVisible={setIsVisible}
           /></div > : null}
       </Content>
       <Modal footer={null} title="Remove Multiple User" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
@@ -622,7 +653,7 @@ const App = () => {
         </div>
       </Modal>
       <Modal
-        title="Change User"
+        title="Remove Employees"
         open={isRemoveRangeModalOpen}
         onOk={handleRemoveRangeModalOk}
         onCancel={handleRemoveRangeModalCancel}
@@ -631,6 +662,10 @@ const App = () => {
       >
         <div>
           <InputNumber
+            min={1}
+            max={136}
+            placeholder="Start"
+            prefix={'S'}
             name='startRange'
             onChange={(e) => onRangeSelectChange(e, "startRange")}
             value={rangeValue.startRange}
@@ -638,11 +673,16 @@ const App = () => {
           <InputNumber
             name='endRange'
             className='m-2'
+            prefix={'S'}
+            min={1}
+            max={136}
+            placeholder="End"
             onChange={(e) => onRangeSelectChange(e, "endRange")}
             value={rangeValue.endRange}
           />
+          {errorMessage ? <div style={{ color: 'red' }}> {errorMessage}</div> : null}
           <div>
-            Are you sure want to select the places?
+          The seats will be removed from the selected range
           </div>
         </div>
       </Modal>

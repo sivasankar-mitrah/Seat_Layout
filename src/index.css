@@ -107,7 +107,8 @@
 
 .custom-box-glow {
   border-color: #0ddb1068 !important;
-  background: linear-gradient(360deg, #17f24363 10%, #17f29735 50%, #17f27a38 100%);
+  /* background: linear-gradient(360deg, #17f24363 10%, #17f29735 50%, #17f27a38 100%); */
+  background: #17f24363 !important;
   animation: glow 1.4s ease-out infinite;
 }
 
@@ -188,9 +189,12 @@
   background-color: #5deeb1;
 }
 
-.icon-wrapper svg {
-  width: 1.5rem;
-  height: 1.5rem;
+.icon-wrapper{
+  line-height: 12px !important;
+}
+
+.icon-wrapper .anticon-phone {
+  font-size: 1.5rem;
 }
 
 .ant-layout-header {
