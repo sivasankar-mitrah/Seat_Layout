@@ -53,8 +53,8 @@
 }
 
 .secondElement {
-  padding: 50px;
-  width: 40%;
+  padding: 20px 40px;
+  width: 30%;
   margin-left: 10px;
   border-left: solid 2px black;
   /* background-color: gainsboro; */
@@ -207,6 +207,7 @@
 
 .icons-container {
   display: flex;
+  align-items: center;
   gap: 2rem;
 }
 

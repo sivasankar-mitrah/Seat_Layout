@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button, Flex, Form, Modal, Select, Table, Tag } from 'antd';
+import { Button, Flex, Form, Modal, Select, Table, Tag, Typography } from 'antd';
 import Profile from './profileCard';
 import UnOccupiedProfileCard from './unOccupiedProfileCard';
 import { useNotification } from './common/notification';
-import { CloseCircleFilled, CloseOutlined } from '@ant-design/icons';
+import { CloseOutlined } from '@ant-design/icons';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
+const { Title } = Typography
 export default function DrawerFn
     ({
         form,
@@ -49,7 +50,7 @@ export default function DrawerFn
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 7,
-      });
+    });
     const api = useNotification();
 
     const values = form.getFieldValue();
@@ -67,12 +68,12 @@ export default function DrawerFn
             setSelectedTag(null)
             form.setFieldsValue({ UnOccupiedSeats: null })
             setSelectBoxGlow({ seatName: "", selectStatus: false });
-          } 
-    },[isVisible,selectedTag])
+        }
+    }, [isVisible, selectedTag])
 
-      const handleTableChange = (pagination) => {
-            setPagination(pagination);
-        };
+    const handleTableChange = (pagination) => {
+        setPagination(pagination);
+    };
     useEffect(() => {
         let updatedOption = [
             {
@@ -176,7 +177,7 @@ export default function DrawerFn
     }
 
     const handleOccupiedCancel = () => {
-        setPagination({current:1 , pageSize:7})
+        setPagination({ current: 1, pageSize: 7 })
         setIsOccupiedModalOpen(false)
     }
 
@@ -595,7 +596,18 @@ export default function DrawerFn
             />
         );
     };
-
+const sideSectionClose =() => {
+    setIsVisible(false);
+    setOpen(false);
+    setSelectedPerson([])
+    const updatedLayout = currentLayout.map((item) => {
+        if (item.i === selecetedPerson[0].i) {
+            return { ...item, cls: selecetedPerson[0].cls }
+        }
+        return item
+    })
+    setCurrentLayout(updatedLayout)
+}
 
     return (
         <>
@@ -610,100 +622,108 @@ export default function DrawerFn
                             autoComplete="off"
                             style={{ position: "fixed" }}
                         >
-                            {!isVisible ? <><Form.Item
-                                label={(selecetedPerson[0]?.seat_id) ? "Employee Selected" : `Seat ${selecetedPerson[0]?.i} is currently available!`}
-                                name="newEmployee"
-                                labelCol={{
-                                    span: 24,
-                                }}
-                                wrapperCol={{
-                                    span: 24,
-                                }}
-                            >
-                                {/* <Input disabled /> */}
-                                {(selecetedPerson[0]?.seat_id) !== "" && <Profile
-                                    values={values}
-                                    show={show}
-                                    currentLayout={currentLayout}
-                                    setCurrentLayout={setCurrentLayout}
-                                    setUnOccupiedPeople={setUnOccupiedPeople}
-                                    setSelectedPerson={setSelectedPerson}
-                                    setOpen={setOpen} />}
-                            </Form.Item>
-                                <Form.Item
-                                    label="Current Employee"
-                                    name="currentEmployee"
-                                    labelCol={{
-                                        span: 24,
-                                    }}
-                                    wrapperCol={{
-                                        span: 24,
-                                    }}
-                                    rules={[{ required: true, message: 'Please input your name!' }]}
-                                >
-                                    <Select
-                                        className='ms-2'
-                                        showSearch
-                                        placeholder="Select New Employee"
-                                        options={devoption}
-                                        onChange={handleOccupuiedChange}
-                                    />
-                                </Form.Item>
-                                <Form.Item className='d-flex justify-content-center mt-4'>
-                                    <>
-                                        <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
-                                            Change
-                                        </Button>
-                                        {isSwapButtonVisible &&
-                                            <Button onClick={handleConfirmSwap} type="primary">
-                                                Swap
-                                            </Button>
-                                        }</>
-                                </Form.Item>
+                            {!isVisible ? <>
+                                <div style={{ display: "flex" }}>
+                                    <div>
+                                        <Form.Item
+                                            label={(selecetedPerson[0]?.seat_id) ? "Employee Selected" : `Seat ${selecetedPerson[0]?.i} is currently available!`}
+                                            name="newEmployee"
+                                            labelCol={{
+                                                span: 24,
+                                            }}
+                                            wrapperCol={{
+                                                span: 24,
+                                            }}
+                                        >
+                                            {/* <Input disabled /> */}
+                                            {(selecetedPerson[0]?.seat_id) !== "" && <Profile
+                                                values={values}
+                                                show={show}
+                                                currentLayout={currentLayout}
+                                                setCurrentLayout={setCurrentLayout}
+                                                setUnOccupiedPeople={setUnOccupiedPeople}
+                                                setSelectedPerson={setSelectedPerson}
+                                                setOpen={setOpen} />}
+                                        </Form.Item>
+                                        <Form.Item
+                                            label="Current Employee"
+                                            name="currentEmployee"
+                                            labelCol={{
+                                                span: 24,
+                                            }}
+                                            wrapperCol={{
+                                                span: 24,
+                                            }}
+                                            rules={[{ required: true, message: 'Please input your name!' }]}
+                                        >
+                                            <Select
+                                                className='ms-2'
+                                                showSearch
+                                                placeholder="Select New Employee"
+                                                options={devoption}
+                                                onChange={handleOccupuiedChange}
+                                            />
+                                        </Form.Item>
+                                        <Form.Item className='d-flex justify-content-center mt-4'>
+                                            <>
+                                                <Button className='mx-2' onClick={handlePlaceChange} disabled={isChangeButtonVisible} type="primary">
+                                                    Change
+                                                </Button>
+                                                {isSwapButtonVisible &&
+                                                    <Button onClick={handleConfirmSwap} type="primary">
+                                                        Swap
+                                                    </Button>
+                                                }</>
+                                        </Form.Item>
+                                    </div>
+                                    <Button onClick={()=>sideSectionClose('single')} style={{ marginRight: '50px', fontSize: '1.2rem' }} type='warning'><CloseOutlined style={{ color: 'red' }} /></Button>
+                                </div>
 
                             </> : null}
                             {isVisible && <>
-                                <div style={{display:"flex"}}>
-                                <Form.Item
-                                    label="Unoccupied Peoples"
-                                    name="unOccupied"
-                                    labelCol={{
-                                        span: 24,
-                                    }}
-                                    wrapperCol={{
-                                        span: 24,
-                                    }}
+                                <div style={{ display: "flex" }}>
+                                    <Form.Item
+                                        label={<Title level={4} type='danger'>Unoccupied Peoples</Title>}
+                                        name="unOccupied"
+                                        labelCol={{
+                                            span: 24,
+                                        }}
+                                        wrapperCol={{
+                                            span: 24,
+                                        }}
 
-                                >
-                                    <Flex gap={8} wrap align="center" style={{ maxHeight: unOccupiedPeople.length > 15 ? "400px" : "auto", overflow: "auto" }}>
-                                        {unOccupiedPeople.filter((_, i) => (!!readMore && i < 15) || !readMore).map((tag, index) => (
+                                    >
+                                        <Flex gap={8} wrap align="center" style={{ maxHeight: unOccupiedPeople.length > 15 ? "400px" : "auto", overflow: "auto" }}>
+                                            {unOccupiedPeople.filter((_, i) => (!!readMore && i < 15) || !readMore).map((tag, index) => (
 
-                                            <Tag.CheckableTag
-                                                className={
-                                                    tag.stack === 'frontend' ? 'react-bg ' :
-                                                        tag.stack === 'php' ? 'php-bg ' :
-                                                            tag.stack === 'backend' ? 'cf-bg ' : ""
-                                                }
-                                                key={index}
-                                                checked={selectedTag === tag}
-                                                onChange={(checked) => handleTagChange(tag, checked)}
-                                            >
-                                                {tag.devName}
-                                            </Tag.CheckableTag>
-                                        ))}
-                                        <Button color="primary" onClick={() => setReadMore(!readMore)} variant="link">
-                                            {readMore ? "Read More" : "Read Less"}
+                                                <Tag.CheckableTag
+                                                    className={
+                                                        tag.stack === 'frontend' ? 'react-bg ' :
+                                                            tag.stack === 'php' ? 'php-bg ' :
+                                                                tag.stack === 'backend' ? 'cf-bg ' : ""
+                                                    }
+                                                    key={index}
+                                                    checked={selectedTag === tag}
+                                                    onChange={(checked) => handleTagChange(tag, checked)}
+                                                >
+                                                    {tag.devName}
+                                                </Tag.CheckableTag>
+                                            ))}
+                                            {unOccupiedPeople.length > 15 ?
+                                                <Button color="primary" onClick={() => setReadMore(!readMore)} variant="link">
+                                                    {readMore ? "Read More" : "Read Less"}
+                                                </Button>
+                                                : null}
+                                        </Flex>
+                                        <Button color="danger" className='mt-3' onClick={() => handleRandomOrder(true)} variant="solid">
+                                            Random Order
                                         </Button>
-                                    </Flex>
-                                    <Button color="danger" className='mt-3' onClick={() => handleRandomOrder(true)} variant="solid">
-                                        Random Order
-                                    </Button>
-                                </Form.Item>
-                                    <Button style={{ marginRight: '50px' }} color='danger' type='danger' variant='danger' onClick={() => {
+                                    </Form.Item>
+                                    <Button onClick={() => {
                                         setIsVisible(false);
                                         !selecetedPerson.length ? setOpen(false) : setOpen(true)
-                                    }}><CloseCircleFilled size={'large'} /></Button>
-                                </div>   
+                                    }} style={{ marginRight: '50px', fontSize: '1.2rem' }} type='warning'><CloseOutlined style={{ color: 'red' }} /></Button>
+                                </div>
                             </>}
                             {isVisible && selectedTag ? <>
                                 <UnOccupiedProfileCard values={selectedTag} />
@@ -801,10 +821,10 @@ export default function DrawerFn
                                 : "No Empty Seats"}
                         </Modal>
                     </div> :
+                    <div style={{display:"flex", justifyContent:'space-evenly'}}>
                     <div className='multiple-drawer-parent'>
                         <h5>Selected Persons</h5>
                         <div className='multiple-drawer-grid'>
-
                             {selecetedPerson.map(person => {
                                 return (
                                     <Tag key={person.devId}
@@ -821,6 +841,8 @@ export default function DrawerFn
                         {radioValue === "multiple" && selecetedPerson?.length >= 1 && <Button type="primary"
                             style={{ marginTop: "30px", width: "fit-content", }}
                             onClick={() => removeEmployee(true)}>Remove Employee </Button>}
+                    </div>
+                    <Button  onClick={()=>sideSectionClose('multiple')} style={{ marginRight: '50px', fontSize: '1.2rem' }} type='warning'><CloseOutlined style={{color:'red'}}/></Button>
                     </div>
             }
         </>

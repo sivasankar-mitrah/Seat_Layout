@@ -10,7 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNotification } from './common/notification';
 import { CheckOutlined, CloseOutlined, DeleteColumnOutlined, DeleteOutlined, PhoneOutlined, PhoneTwoTone, UserDeleteOutlined, UsergroupAddOutlined, UserOutlined } from '@ant-design/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faPhone, faPhoneSlash } from '@fortawesome/free-solid-svg-icons';
 
 
 const App = () => {
@@ -353,7 +353,7 @@ const App = () => {
   }
 
   const onChange = (value) => {
-    if (value === "single") {
+    if (value) {
       setRadioValue('multiple')
     } else {
       setRadioValue('single')
@@ -396,7 +396,6 @@ const App = () => {
       });
     }
   }
-
   return (
     <Layout>
       <Header
@@ -477,31 +476,31 @@ const App = () => {
         />
         <div className='icons-container'>
           <Tooltip placement="top" title={"Show Intercom"}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className='icon-wrapper'>
-                <PhoneOutlined />
-              </span>
-              <Switch
-                checkedChildren={<CheckOutlined />}
-                unCheckedChildren={<CloseOutlined />}
-                onClick={(e) => setIsIntercomVisible(e)}
-              />
-            </div>
+            <Switch
+              checkedChildren={<PhoneOutlined />}
+              unCheckedChildren={<FontAwesomeIcon icon={faPhoneSlash} />}
+              onClick={(e) => setIsIntercomVisible(e)}
+            />
           </Tooltip>
           <div className='icon-wrapper'>
             <Tooltip placement="top" title={radioValue === "multiple" ? "Multiple Select" : "Single Select"}>
-                {radioValue === "multiple" ? <Button type='primary' onClick={() => onChange("multiple")} ><UsergroupAddOutlined /></Button>
-                  : <Button type='primary' onClick={() => onChange("single")} ><UserOutlined /></Button>}
+              {/* {radioValue === "multiple" ? <Button type='primary' onClick={() => onChange("multiple")} ><UsergroupAddOutlined /></Button>
+                  : <Button type='primary' onClick={() => onChange("single")} ><UserOutlined /></Button>} */}
+              <Switch
+                checkedChildren={<UsergroupAddOutlined />}
+                unCheckedChildren={<UserOutlined />}
+                onClick={(e) => onChange(e)}
+              />
             </Tooltip>
           </div>
           <Tooltip placement="top" title={"Complete"}>
             <Button type='primary' onClick={onHandleComplete}>
-              <CheckOutlined  className='icon-wrapper' />
+              <CheckOutlined className='icon-wrapper' />
             </Button>
           </Tooltip>
           <Tooltip placement="top" title={"UnOccupied Employees"}>
-            <Button type='primary'  onClick={handleUnoccupiedPeople}>
-              <UserDeleteOutlined className='icon-wrapper'  />
+            <Button type='primary' onClick={handleUnoccupiedPeople}>
+              <UserDeleteOutlined className='icon-wrapper' />
             </Button>
           </Tooltip>
         </div>
@@ -682,7 +681,7 @@ const App = () => {
           />
           {errorMessage ? <div style={{ color: 'red' }}> {errorMessage}</div> : null}
           <div>
-          The seats will be removed from the selected range
+            The seats will be removed from the selected range
           </div>
         </div>
       </Modal>
